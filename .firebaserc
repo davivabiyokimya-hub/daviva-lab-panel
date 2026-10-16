@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "daviva-lab"
+  },
+  "targets": {
+    "daviva-lab": {
+      "hosting": {
+        "yeni-panel": [
+          "BURAYA_YENI_HOSTING_SITE_ID"
+        ]
+      }
+    }
+  }
+}
