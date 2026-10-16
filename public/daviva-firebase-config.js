@@ -1,8 +1,10 @@
-// Firebase Console > Proje ayarları > Web uygulaması yapılandırması.
-// Özel anahtar veya servis hesabı JSON dosyası eklemeyin.
+// Firebase web uygulaması yapılandırması (genel istemci kimlikleri).
 export const firebaseConfig = {
-  apiKey: "BURAYA_API_KEY",
-  authDomain: "BURAYA_AUTH_DOMAIN",
-  projectId: "BURAYA_PROJECT_ID",
-  appId: "BURAYA_APP_ID"
+  apiKey: "AIzaSyCoVcJm10kiQJcg6KiytZhBQHBcun518f4",
+  authDomain: "daviva-lab.firebaseapp.com",
+  projectId: "daviva-lab",
+  storageBucket: "daviva-lab.firebasestorage.app",
+  messagingSenderId: "927834270553",
+  appId: "1:927834270553:web:69cd9e31eec05483eaba48",
+  measurementId: "G-DENG21F2EY"
 };
