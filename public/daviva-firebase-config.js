@@ -1,6 +1,6 @@
 // Firebase web uygulaması yapılandırması (genel istemci kimlikleri).
 export const firebaseConfig = {
-  apiKey: "AIzaSyCoVcJm10kiQJcg6KiytZhBQHBcun518f4",
+  apiKey: "AIzaSyCoVcJm1OkiQJcg6KiytZhBQHBcun518f4",
   authDomain: "daviva-lab.firebaseapp.com",
   projectId: "daviva-lab",
   storageBucket: "daviva-lab.firebasestorage.app",
