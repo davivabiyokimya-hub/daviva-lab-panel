@@ -68,6 +68,25 @@ service cloud.firestore {
         );
       allow delete: if false;
     }
+    match /stockCounts/{id} {
+      allow read: if activeStaff();
+      allow create: if activeStaff()
+        && request.resource.data.keys().hasAll(['productId','productName','systemQuantity','actualQuantity','difference','note','email','uid','createdAt'])
+        && request.resource.data.keys().hasOnly(['productId','productName','systemQuantity','actualQuantity','difference','note','email','uid','createdAt'])
+        && request.resource.data.productId is string
+        && request.resource.data.productName is string
+        && request.resource.data.systemQuantity is int && request.resource.data.systemQuantity >= 0
+        && request.resource.data.actualQuantity is int && request.resource.data.actualQuantity >= 0
+        && request.resource.data.difference == request.resource.data.actualQuantity - request.resource.data.systemQuantity
+        && request.resource.data.note is string && request.resource.data.note.size() <= 250
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.createdAt == request.time
+        && exists(/databases/$(database)/documents/products/$(request.resource.data.productId))
+        && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.name == request.resource.data.productName
+        && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.quantity == request.resource.data.systemQuantity;
+      allow update, delete: if false;
+    }
     match /suppliers/{id} {
       allow read: if activeStaff();
       allow create: if activeStaff()
