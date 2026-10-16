@@ -68,11 +68,27 @@ service cloud.firestore {
         );
       allow delete: if false;
     }
+    match /suppliers/{id} {
+      allow read: if activeStaff();
+      allow create: if activeStaff()
+        && request.resource.data.keys().hasAll(['name','taxNo','phone','email','contact','address','createdAt','createdBy'])
+        && request.resource.data.keys().hasOnly(['name','taxNo','phone','email','contact','address','createdAt','createdBy'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 160
+        && request.resource.data.taxNo is string && request.resource.data.taxNo.size() <= 20
+        && request.resource.data.phone is string && request.resource.data.phone.size() <= 40
+        && request.resource.data.email is string && request.resource.data.email.size() <= 160
+        && request.resource.data.contact is string && request.resource.data.contact.size() <= 100
+        && request.resource.data.address is string && request.resource.data.address.size() <= 250
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
     match /stockMovements/{id} {
       allow read: if activeStaff();
       allow create: if activeStaff()
         && request.resource.data.keys().hasAll(['productId','productName','type','quantity','before','after','note','email','uid','createdAt'])
-        && request.resource.data.keys().hasOnly(['productId','productName','type','quantity','before','after','note','email','uid','createdAt'])
+        && request.resource.data.keys().hasOnly(['productId','productName','type','quantity','before','after','note','email','uid','createdAt','supplierId','supplierName','dispatchNo','dispatchDate','dispatchPath'])
         && request.resource.data.productId is string
         && request.resource.data.productName is string
         && request.resource.data.type in ['IN','OUT']
@@ -83,6 +99,23 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.createdAt == request.time
+        && request.resource.data.get('supplierId','') is string
+        && request.resource.data.get('supplierName','') is string
+        && request.resource.data.get('dispatchNo','') is string
+        && request.resource.data.get('dispatchDate','') is string
+        && request.resource.data.get('dispatchPath','') is string
+        && request.resource.data.get('dispatchNo','').size() <= 80
+        && request.resource.data.get('dispatchPath','').size() <= 150
+        && (request.resource.data.type != 'IN'
+          || (request.resource.data.supplierId.size() > 0
+            && request.resource.data.dispatchNo.size() > 0
+            && request.resource.data.dispatchDate.size() == 10
+            && exists(/databases/$(database)/documents/suppliers/$(request.resource.data.supplierId))
+            && get(/databases/$(database)/documents/suppliers/$(request.resource.data.supplierId)).data.name == request.resource.data.supplierName))
+        && (request.resource.data.type != 'OUT'
+          || (request.resource.data.supplierId == '' && request.resource.data.supplierName == ''
+            && request.resource.data.dispatchNo == '' && request.resource.data.dispatchDate == ''
+            && request.resource.data.dispatchPath == ''))
         && exists(productPath(request.resource.data.productId))
         && get(productPath(request.resource.data.productId)).data.name == request.resource.data.productName
         && get(productPath(request.resource.data.productId)).data.quantity == request.resource.data.before
