@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function staffRecord() { return get(/databases/$(database)/documents/kadro/$(request.auth.uid)); }
+    function activeStaff() {
+      return signedIn() && exists(/databases/$(database)/documents/kadro/$(request.auth.uid))
+        && staffRecord().data.aktif == true
+        && staffRecord().data['e-posta'] == request.auth.token.email;
+    }
+    function admin() { return activeStaff() && staffRecord().data.rol == 'admin'; }
+    match /kadro/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || admin());
+      allow list: if admin();
+      allow create, update, delete: if admin();
+    }
+    match /products/{id} {
+      allow read: if activeStaff();
+      allow write: if false;
+    }
+    match /stockMovements/{id} {
+      allow read: if activeStaff();
+      allow write: if false;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
