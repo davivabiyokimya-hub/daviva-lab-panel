@@ -1,7 +1,7 @@
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import {getFirestore,doc,getDoc,collection,getDocs,query,orderBy,limit} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-import {firebaseConfig} from "./daviva-firebase-config.js";
+import {firebaseConfig} from "./daviva-firebase-config.js?v=20261016-2";
 const $=id=>document.getElementById(id);const status=t=>$("status").textContent=t;
 let auth,db,products=[];const configured=Object.values(firebaseConfig).every(v=>typeof v==="string"&&!v.startsWith("BURAYA_"));
 document.querySelectorAll("[data-page]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-page]").forEach(x=>x.classList.toggle("active",x===b));document.querySelectorAll(".page").forEach(p=>p.classList.toggle("hidden",p.id!==b.dataset.page));$("heading").textContent=b.textContent.trim()});
