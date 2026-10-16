@@ -1,0 +1,22 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function activeStaff() {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/kadro/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/kadro/$(request.auth.uid)).data.aktif == true
+        && firestore.get(/databases/(default)/documents/kadro/$(request.auth.uid)).data['e-posta'] == request.auth.token.email
+        && firestore.get(/databases/(default)/documents/kadro/$(request.auth.uid)).data.rol in ['admin', 'stok'];
+    }
+    match /dispatch-notes/{fileName} {
+      allow read: if activeStaff();
+      allow create: if activeStaff()
+        && request.resource.size <= 10 * 1024 * 1024
+        && request.resource.contentType in ['application/pdf','image/jpeg','image/png','image/webp']
+        && fileName.matches('[A-Za-z0-9_-]+[.](pdf|jpg|png|webp)')
+        && request.resource.metadata.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+    match /{allPaths=**} { allow read, write: if false; }
+  }
+}
