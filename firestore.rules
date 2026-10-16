@@ -2,25 +2,99 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    function staffRecord() { return get(/databases/$(database)/documents/kadro/$(request.auth.uid)); }
+    function staffPath() { return /databases/$(database)/documents/kadro/$(request.auth.uid); }
     function activeStaff() {
-      return signedIn() && exists(/databases/$(database)/documents/kadro/$(request.auth.uid))
-        && staffRecord().data.aktif == true
-        && staffRecord().data['e-posta'] == request.auth.token.email;
+      return signedIn() && exists(staffPath())
+        && get(staffPath()).data.aktif == true
+        && get(staffPath()).data['e-posta'] == request.auth.token.email
+        && get(staffPath()).data.rol in ['admin', 'stok'];
     }
-    function admin() { return activeStaff() && staffRecord().data.rol == 'admin'; }
+    function admin() { return activeStaff() && get(staffPath()).data.rol == 'admin'; }
+    function productPath(id) { return /databases/$(database)/documents/products/$(id); }
+    function movementPath(id) { return /databases/$(database)/documents/stockMovements/$(id); }
+    function validProduct(d) {
+      return d.keys().hasAll(['code','name','unit','minStock','quantity','createdBy','createdAt','updatedBy','updatedAt'])
+        && d.keys().hasOnly(['code','name','barcode','lot','expiry','unit','minStock','quantity','category','location','note','createdBy','createdAt','updatedBy','updatedAt','lastMovementId'])
+        && d.code is string && d.code.size() > 0 && d.code.size() <= 64
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 160
+        && d.unit is string && d.unit.size() > 0 && d.unit.size() <= 40
+        && d.minStock is int && d.minStock >= 0
+        && d.quantity is int && d.quantity >= 0
+        && d.get('barcode','') is string && d.get('barcode','').size() <= 128
+        && d.get('lot','') is string && d.get('lot','').size() <= 128
+        && d.get('expiry','') is string && d.get('expiry','').size() <= 10
+        && d.get('category','') is string && d.get('category','').size() <= 80
+        && d.get('location','') is string && d.get('location','').size() <= 80
+        && d.get('note','') is string && d.get('note','').size() <= 400;
+    }
+    function validStaff(d) {
+      return d.keys().hasAll(['aktif','e-posta','rol'])
+        && d.keys().hasOnly(['aktif','e-posta','rol','updatedAt','updatedBy'])
+        && d.aktif is bool && d['e-posta'] is string
+        && d['e-posta'].size() <= 254 && d.rol in ['admin','stok'];
+    }
     match /kadro/{uid} {
       allow get: if signedIn() && (request.auth.uid == uid || admin());
       allow list: if admin();
-      allow create, update, delete: if admin();
+      allow create, update: if admin() && validStaff(request.resource.data)
+        && request.resource.data.get('updatedBy',request.auth.uid) == request.auth.uid;
+      allow delete: if false;
     }
     match /products/{id} {
       allow read: if activeStaff();
-      allow write: if false;
+      allow create: if activeStaff() && validProduct(request.resource.data)
+        && request.resource.data.quantity == 0
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if activeStaff() && validProduct(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time
+        && (
+          (admin()
+            && request.resource.data.quantity == resource.data.quantity
+            && request.resource.data.get('lastMovementId','') == resource.data.get('lastMovementId',''))
+          ||
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['quantity','lastMovementId','updatedAt','updatedBy'])
+            && request.resource.data.lastMovementId is string
+            && request.resource.data.lastMovementId.size() > 0
+            && getAfter(movementPath(request.resource.data.lastMovementId)).data.productId == id
+            && getAfter(movementPath(request.resource.data.lastMovementId)).data.after == request.resource.data.quantity
+            && getAfter(movementPath(request.resource.data.lastMovementId)).data.before == resource.data.quantity
+            && getAfter(movementPath(request.resource.data.lastMovementId)).data.uid == request.auth.uid)
+        );
+      allow delete: if false;
     }
     match /stockMovements/{id} {
       allow read: if activeStaff();
-      allow write: if false;
+      allow create: if activeStaff()
+        && request.resource.data.keys().hasAll(['productId','productName','type','quantity','before','after','note','email','uid','createdAt'])
+        && request.resource.data.keys().hasOnly(['productId','productName','type','quantity','before','after','note','email','uid','createdAt'])
+        && request.resource.data.productId is string
+        && request.resource.data.productName is string
+        && request.resource.data.type in ['IN','OUT']
+        && request.resource.data.quantity is int && request.resource.data.quantity > 0
+        && request.resource.data.before is int && request.resource.data.before >= 0
+        && request.resource.data.after is int && request.resource.data.after >= 0
+        && request.resource.data.note is string && request.resource.data.note.size() <= 250
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.createdAt == request.time
+        && exists(productPath(request.resource.data.productId))
+        && get(productPath(request.resource.data.productId)).data.name == request.resource.data.productName
+        && get(productPath(request.resource.data.productId)).data.quantity == request.resource.data.before
+        && getAfter(productPath(request.resource.data.productId)).data.quantity == request.resource.data.after
+        && getAfter(productPath(request.resource.data.productId)).data.lastMovementId == id
+        && (
+          (request.resource.data.type == 'IN'
+            && request.resource.data.after == request.resource.data.before + request.resource.data.quantity)
+          || (request.resource.data.type == 'OUT'
+            && request.resource.data.after == request.resource.data.before - request.resource.data.quantity)
+        );
+      allow update, delete: if false;
     }
     match /{document=**} { allow read, write: if false; }
   }
