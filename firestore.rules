@@ -120,10 +120,10 @@ service cloud.firestore {
       allow read: if activeStaff();
       allow create: if activeStaff()
         && request.resource.data.keys().hasAll(['productId','productName','type','quantity','before','after','note','email','uid','createdAt'])
-        && request.resource.data.keys().hasOnly(['productId','productName','type','quantity','before','after','note','email','uid','createdAt','supplierId','supplierName','dispatchNo','dispatchDate','dispatchPath'])
+        && request.resource.data.keys().hasOnly(['productId','productName','type','quantity','before','after','note','email','uid','createdAt','supplierId','supplierName','dispatchNo','dispatchDate','dispatchPath','unitCost','totalCost'])
         && request.resource.data.productId is string
         && request.resource.data.productName is string
-        && request.resource.data.type in ['IN','OUT']
+        && request.resource.data.type in ['IN','OUT','CAL','QC','WASTE','DISPOSAL']
         && request.resource.data.quantity is int && request.resource.data.quantity > 0
         && request.resource.data.before is int && request.resource.data.before >= 0
         && request.resource.data.after is int && request.resource.data.after >= 0
@@ -148,6 +148,7 @@ service cloud.firestore {
           || (request.resource.data.supplierId == '' && request.resource.data.supplierName == ''
             && request.resource.data.dispatchNo == '' && request.resource.data.dispatchDate == ''
             && request.resource.data.dispatchPath == ''))
+        && (request.resource.data.type in ['IN','OUT'] || (request.resource.data.unitCost is number && request.resource.data.unitCost > 0 && request.resource.data.totalCost is number && request.resource.data.totalCost == request.resource.data.unitCost * request.resource.data.quantity && request.resource.data.get('supplierId','') == '' && request.resource.data.get('dispatchNo','') == '' && request.resource.data.get('dispatchPath','') == ''))
         && exists(productPath(request.resource.data.productId))
         && get(productPath(request.resource.data.productId)).data.name == request.resource.data.productName
         && get(productPath(request.resource.data.productId)).data.quantity == request.resource.data.before
@@ -156,7 +157,7 @@ service cloud.firestore {
         && (
           (request.resource.data.type == 'IN'
             && request.resource.data.after == request.resource.data.before + request.resource.data.quantity)
-          || (request.resource.data.type == 'OUT'
+          || (request.resource.data.type in ['OUT','CAL','QC','WASTE','DISPOSAL']
             && request.resource.data.after == request.resource.data.before - request.resource.data.quantity)
         );
       allow update, delete: if false;
