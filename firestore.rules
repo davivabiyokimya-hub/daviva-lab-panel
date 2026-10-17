@@ -37,6 +37,22 @@ service cloud.firestore {
       return admin() || (activeStaff() && (!exists(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)) || get(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)).data.get(feature, false) == true));
     }
     function bloodAccess() { return admin() || (activeStaff() && exists(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)) && get(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)).data.get('bloodBank', false) == true); }
+    match /permissionAudit/{id} {
+      allow read: if admin();
+      allow create: if admin()
+        && request.resource.data.keys().hasOnly(['targetUid','targetEmail','actorUid','actorEmail','changes','createdAt'])
+        && request.resource.data.keys().hasAll(['targetUid','targetEmail','actorUid','actorEmail','changes','createdAt'])
+        && request.resource.data.targetUid is string
+        && request.resource.data.targetUid.size() > 0
+        && request.resource.data.targetEmail is string
+        && request.resource.data.actorUid == request.auth.uid
+        && request.resource.data.actorEmail == request.auth.token.email
+        && request.resource.data.changes is map
+        && request.resource.data.changes.size() > 0
+        && request.resource.data.changes.keys().hasOnly(['inventory','stockMovements','stockCounts','suppliers','testLosses','labModules','bloodBank'])
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
     match /accessPermissions/{uid} {
       allow get: if admin() || (signedIn() && request.auth.uid == uid);
       allow list: if admin();
