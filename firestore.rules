@@ -36,10 +36,11 @@ service cloud.firestore {
     function canAccess(feature) {
       return admin() || (activeStaff() && (!exists(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)) || get(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)).data.get(feature, false) == true));
     }
+    function bloodAccess() { return admin() || (activeStaff() && exists(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)) && get(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)).data.get('bloodBank', false) == true); }
     match /accessPermissions/{uid} {
       allow get: if admin() || (signedIn() && request.auth.uid == uid);
       allow list: if admin();
-      allow create, update: if admin() && request.resource.data.keys().hasOnly(['inventory','stockMovements','stockCounts','suppliers','testLosses','labModules']) && request.resource.data.keys().hasAll(['inventory','stockMovements','stockCounts','suppliers','testLosses','labModules']) && request.resource.data.inventory is bool && request.resource.data.stockMovements is bool && request.resource.data.stockCounts is bool && request.resource.data.suppliers is bool && request.resource.data.testLosses is bool && request.resource.data.labModules is bool;
+      allow create, update: if admin() && request.resource.data.keys().hasOnly(['inventory','stockMovements','stockCounts','suppliers','testLosses','labModules','bloodBank']) && request.resource.data.keys().hasAll(['inventory','stockMovements','stockCounts','suppliers','testLosses','labModules']) && request.resource.data.inventory is bool && request.resource.data.stockMovements is bool && request.resource.data.stockCounts is bool && request.resource.data.suppliers is bool && request.resource.data.testLosses is bool && request.resource.data.labModules is bool && request.resource.data.get('bloodBank', false) is bool;
       allow delete: if admin();
     }
     match /kadro/{uid} {
@@ -234,14 +235,14 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /bloodUnits/{unitId} {
-      allow read: if admin();
-      allow create: if admin() && request.resource.data.uid == request.auth.uid && request.resource.data.status == 'AVAILABLE';
-      allow update: if admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt','updatedBy']) && request.resource.data.updatedBy == request.auth.uid && resource.data.status in ['AVAILABLE','QUARANTINED'] && request.resource.data.status in ['AVAILABLE','QUARANTINED','ISSUED','DISCARDED'];
+      allow read: if bloodAccess();
+      allow create: if bloodAccess() && request.resource.data.uid == request.auth.uid && request.resource.data.status == 'AVAILABLE';
+      allow update: if bloodAccess() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt','updatedBy']) && request.resource.data.updatedBy == request.auth.uid && resource.data.status in ['AVAILABLE','QUARANTINED'] && request.resource.data.status in ['AVAILABLE','QUARANTINED','ISSUED','DISCARDED'];
       allow delete: if false;
     }
     match /bloodMovements/{movementId} {
-      allow read: if admin();
-      allow create: if admin() && request.resource.data.uid == request.auth.uid && request.resource.data.action in ['AVAILABLE','QUARANTINED','ISSUED','DISCARDED'];
+      allow read: if bloodAccess();
+      allow create: if bloodAccess() && request.resource.data.uid == request.auth.uid && request.resource.data.action in ['AVAILABLE','QUARANTINED','ISSUED','DISCARDED'];
       allow update, delete: if false;
     }
     match /{document=**} { allow read, write: if false; }
