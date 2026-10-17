@@ -1,0 +1,30 @@
+import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {getFirestore,collection,getDocs,doc,getDoc} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+const root=document.getElementById("dvModernDashboard");
+if(root){
+ const auth=getAuth(),db=getFirestore(),metricRoot=document.getElementById("dvMetrics"),deviceRoot=document.getElementById("dvDevices"),status=document.getElementById("dvDashboardStatus");
+ let sequence=0,authorized=false;
+ const style=document.createElement("style");style.textContent='#dashboard .dv-stage-controls{display:flex;align-items:center;gap:10px;justify-content:flex-end;margin:8px 0 14px;flex-wrap:wrap}#dashboard .dv-stage-controls button{background:#0e5b9c;color:#fff;border:0;border-radius:9px;padding:9px 14px;cursor:pointer}#dashboard .dv-stage-controls span{color:#5c738a;font-size:12px}#dashboard .dv-stage-note{font-size:12px;color:#667b91;margin-top:9px}#dashboard .dv-stage-value{font-size:26px;font-weight:800;color:#143957;margin:10px 0}#dashboard .dv-stage-warn{color:#a85c00;font-size:12px}';document.head.append(style);
+ const controls=document.createElement("div");controls.className="dv-stage-controls";controls.innerHTML='<span id="dvStageUpdated">Canlı modül göstergeleri</span><button type="button" id="dvStageRefresh">↻ Modülleri Yenile</button>';root.insertBefore(controls,root.querySelector(".dv-metrics"));
+ const info=document.createElement("p");info.className="dv-stage-note";info.textContent="Talep durumu ve cihaz aktifliği yalnızca kayıtlarda açıkça varsa gösterilir. Fiyat kaydı yoksa stok değeri hesaplanmaz.";root.append(info);
+ const priceFields=["unitPrice","purchasePrice","price"];const money=n=>n.toLocaleString("tr-TR",{style:"currency",currency:"TRY"});
+ function setMetric(label,value){for(const m of metricRoot.querySelectorAll(".dv-metric")){const title=m.querySelector("small");if(title?.textContent===label){const num=m.querySelector("strong");if(num)num.textContent=String(value);return true}}return false}
+ function setText(id,value){const el=document.getElementById(id);if(el)el.textContent=value}
+ function deviceTable(items){deviceRoot.replaceChildren();const t=document.createElement("table");t.className="dv-table";const h=t.createTHead().insertRow();for(const s of ["Cihaz","Son işlem","Sonraki bakım"]){const th=document.createElement("th");th.textContent=s;h.append(th)}const body=t.createTBody();for(const d of items.slice(0,5)){const row=body.insertRow();for(const v of [d.device||"—",d.kind||"—",d.next||"Belirtilmedi"]){const cell=row.insertCell();cell.textContent=v}}deviceRoot.append(t)}
+ async function refresh(){if(!authorized)return;const token=sequence;const b=document.getElementById("dvStageRefresh");b.disabled=true;setText("dvStageUpdated","Modül verileri yükleniyor…");try{
+ // labModules is permission controlled; if Firestore rejects read, do not infer anything.
+ let docs;try{const snapshot=await getDocs(collection(db,"labModules"));docs=snapshot.docs.map(d=>d.data())}catch(_){if(token!==sequence)return;setMetric("Bekleyen Sipariş","—");setMetric("Aktif Cihaz","—");deviceRoot.textContent="Bu kayıtları görüntüleme yetkisi yok veya bağlantı kurulamadı.";setText("dvStageUpdated","Modül erişimi sınırlı");return}
+ if(token!==sequence||!authorized)return;
+ const orders=docs.filter(d=>d.category==="order");const open=orders.filter(d=>["pending","bekliyor","beklemede","onay bekliyor","açık"].includes(String(d.status||"").trim().toLocaleLowerCase("tr-TR")));
+ if(orders.some(d=>d.status!==undefined&&d.status!==null&&String(d.status).trim()))setMetric("Bekleyen Sipariş",open.length);
+ else{setMetric("Bekleyen Sipariş","—");setText("dvStageUpdated",orders.length+" kayıtlı stok talebi; durum alanı yok, bekleyen sayısı hesaplanamıyor.")}
+ const devices=docs.filter(d=>d.category==="device"&&d.device);const byDevice=new Map();for(const d of devices){const key=String(d.device).trim().toLocaleLowerCase("tr-TR");const old=byDevice.get(key);const date=String(d.date||"");if(!old||date>String(old.date||""))byDevice.set(key,d)}
+ const latest=[...byDevice.values()].sort((a,b)=>String(b.date||"").localeCompare(String(a.date||"")));
+ const withStatus=latest.filter(d=>d.status!==undefined&&String(d.status).trim());if(latest.length&&withStatus.length===latest.length){const active=latest.filter(d=>["aktif","active","çalışıyor"].includes(String(d.status).trim().toLocaleLowerCase("tr-TR")));setMetric("Aktif Cihaz",active.length)}else setMetric("Aktif Cihaz","—");
+ if(latest.length)deviceTable(latest);else deviceRoot.textContent="Henüz cihaz bakım kaydı bulunmuyor.";
+ if(!document.getElementById("dvStageUpdated").textContent.includes("durum alanı yok"))setText("dvStageUpdated","Modül verileri: "+new Date().toLocaleString("tr-TR"));
+ }finally{b.disabled=false}}
+ async function priceSummary(){try{const snap=await getDocs(collection(db,"products"));const rows=snap.docs.map(d=>d.data());if(!rows.length)return;let sum=0,covered=0,missing=0;for(const p of rows){const q=Number(p.quantity);const key=priceFields.find(k=>p[k]!==undefined&&p[k]!==null&&p[k]!==""&&Number.isFinite(Number(p[k])));if(key&&Number.isFinite(q)&&q>=0&&Number(p[key])>=0){sum+=q*Number(p[key]);covered++}else missing++}const target=document.getElementById("dvValue");if(!target)return;if(missing){target.textContent=covered+" / "+rows.length+" üründe fiyat ve miktar mevcut. Eksik kayıtlar nedeniyle toplam stok değeri gösterilmiyor.";return}target.textContent=money(sum)+" · "+rows.length+" ürünün kayıtlı birim fiyatından hesaplandı. Para birimi ve fiyat türü kurum tarafından doğrulanmalıdır."}catch(_){}}
+ onAuthStateChanged(auth,async u=>{const token=++sequence;authorized=false;if(!u)return;try{const snap=await getDoc(doc(db,"kadro",u.uid));if(token!==sequence)return;const p=snap.data();authorized=p?.aktif===true&&p["e-posta"]===u.email&&["admin","stok"].includes(p.rol);if(authorized){await Promise.allSettled([refresh(),priceSummary()])}}catch(_){}});
+ document.getElementById("dvStageRefresh").onclick=()=>{if(authorized){refresh();priceSummary()}};
+}
