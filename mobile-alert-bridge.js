@@ -1,0 +1,1 @@
+(()=>{const bar=document.getElementById("dvMobileBar");if(!bar)return;bar.addEventListener("click",e=>{const button=e.target.closest("button");if(button!==bar.children[3])return;const target=document.querySelector('aside nav button[data-page="mobileAlerts"]');if(!target||target.classList.contains("hidden"))return;e.stopImmediatePropagation();target.click()},true)})();
