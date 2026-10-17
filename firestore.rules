@@ -182,6 +182,25 @@ service cloud.firestore {
       allow update: if admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['testCount','note','updatedAt','updatedBy']) && request.resource.data.testCount is int && request.resource.data.testCount > 0 && request.resource.data.note is string && request.resource.data.note.size() <= 250 && request.resource.data.updatedBy == request.auth.uid && request.resource.data.updatedAt == request.time;
       allow delete: if admin();
     }
+    match /labModules/{id} {
+      allow read: if activeStaff();
+      allow create: if activeStaff()
+        && request.resource.data.category in ['kit','qc','device','order','capa','patient','audit']
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.keys().size() <= 20
+        && request.resource.data.size() <= 10000
+        && (request.resource.data.category != 'audit' || admin());
+      allow update: if admin()
+        && request.resource.data.category == resource.data.category
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if admin() && resource.data.category != 'audit';
+    }
     match /{document=**} { allow read, write: if false; }
   }
 }
