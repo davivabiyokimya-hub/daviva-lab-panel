@@ -114,7 +114,7 @@ service cloud.firestore {
         && request.resource.data.createdBy == resource.data.createdBy
         && request.resource.data.updatedAt == request.time
         && request.resource.data.updatedBy == request.auth.uid;
-      allow delete: if false;
+      allow delete: if admin();
     }
     match /stockMovements/{id} {
       allow read: if activeStaff();
