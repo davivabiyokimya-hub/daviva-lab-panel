@@ -262,6 +262,29 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
       allow update, delete: if false;
     }
+    match /dutyRoster/{entryId} {
+      allow read: if admin() || (activeStaff() && resource.data.personUid == request.auth.uid);
+      allow create: if admin()
+        && request.resource.data.keys().hasOnly(['personUid','personName','date','shift','start','end','note','createdBy','createdAt'])
+        && request.resource.data.keys().hasAll(['personUid','personName','date','shift','start','end','note','createdBy','createdAt'])
+        && request.resource.data.personUid is string
+        && request.resource.data.personUid.size() > 0
+        && request.resource.data.personName is string
+        && request.resource.data.personName.size() <= 254
+        && request.resource.data.date is string
+        && request.resource.data.date.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && request.resource.data.shift in ['Gündüz','Gece','24 Saat','İzin']
+        && request.resource.data.start is string
+        && request.resource.data.start.matches('[0-2][0-9]:[0-5][0-9]')
+        && request.resource.data.end is string
+        && request.resource.data.end.matches('[0-2][0-9]:[0-5][0-9]')
+        && request.resource.data.note is string
+        && request.resource.data.note.size() <= 200
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      allow update: if false;
+      allow delete: if admin();
+    }
     match /{document=**} { allow read, write: if false; }
   }
 }
