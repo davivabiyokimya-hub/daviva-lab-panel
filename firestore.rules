@@ -286,6 +286,13 @@ service cloud.firestore {
         && request.resource.data.receivedBy == request.auth.uid
         && request.resource.data.receivedEmail == request.auth.token.email
         && request.resource.data.receivedAt == request.time;
+      allow update: if admin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title','note','editedBy','editedEmail','editedAt'])
+        && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 120
+        && request.resource.data.note is string && request.resource.data.note.size() > 0 && request.resource.data.note.size() <= 1000
+        && request.resource.data.editedBy == request.auth.uid
+        && request.resource.data.editedEmail == request.auth.token.email
+        && request.resource.data.editedAt == request.time;
       allow delete: if false;
     }
     match /dutyRequests/{requestId} {
