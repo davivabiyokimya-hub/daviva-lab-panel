@@ -1,0 +1,19 @@
+{
+  "name": "DAVIVA LAB | Laboratuvar Yönetim Sistemi",
+  "short_name": "DAVIVA LAB",
+  "description": "DAVIVA LAB laboratuvar yönetim paneli",
+  "lang": "tr",
+  "start_url": "/daviva-lab-panel/",
+  "scope": "/daviva-lab-panel/",
+  "display": "standalone",
+  "background_color": "#f3f7fb",
+  "theme_color": "#102b48",
+  "icons": [
+    {
+      "src": "./pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
