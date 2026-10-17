@@ -162,6 +162,24 @@ service cloud.firestore {
         );
       allow update, delete: if false;
     }
+    match /testLosses/{id} {
+      allow read: if activeStaff();
+      allow create: if activeStaff()
+        && request.resource.data.keys().hasAll(['productId','productName','type','testCount','note','email','uid','createdAt'])
+        && request.resource.data.keys().hasOnly(['productId','productName','type','testCount','note','email','uid','createdAt'])
+        && request.resource.data.productId is string
+        && exists(productPath(request.resource.data.productId))
+        && request.resource.data.productName == get(productPath(request.resource.data.productId)).data.name
+        && request.resource.data.type in ['CAL','QC','WASTE','DISPOSAL']
+        && request.resource.data.testCount is int
+        && request.resource.data.testCount > 0
+        && request.resource.data.note is string
+        && request.resource.data.note.size() <= 250
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
     match /{document=**} { allow read, write: if false; }
   }
 }
