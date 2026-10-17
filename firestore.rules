@@ -245,6 +245,23 @@ service cloud.firestore {
       allow create: if bloodAccess() && request.resource.data.uid == request.auth.uid && request.resource.data.action in ['AVAILABLE','QUARANTINED','ISSUED','DISCARDED'];
       allow update, delete: if false;
     }
+    match /controlledDocuments/{id} {
+      allow read: if admin();
+      allow create: if admin()
+        && request.resource.data.keys().hasOnly(['title','category','revision','storagePath','createdBy','createdAt'])
+        && request.resource.data.keys().hasAll(['title','category','revision','storagePath','createdBy','createdAt'])
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 160
+        && request.resource.data.category in ['procedure','instruction','form','manual','other']
+        && request.resource.data.revision is string
+        && request.resource.data.revision.size() <= 30
+        && request.resource.data.storagePath is string
+        && request.resource.data.storagePath.matches('controlled-documents/[A-Za-z0-9_-]+[.](pdf|docx)')
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
     match /{document=**} { allow read, write: if false; }
   }
 }
