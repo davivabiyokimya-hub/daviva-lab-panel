@@ -33,6 +33,15 @@ service cloud.firestore {
         && d.aktif is bool && d['e-posta'] is string
         && d['e-posta'].size() <= 254 && d.rol in ['admin','stok'];
     }
+    function canAccess(feature) {
+      return admin() || (activeStaff() && (!exists(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)) || get(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)).data.get(feature, false) == true));
+    }
+    match /accessPermissions/{uid} {
+      allow get: if admin() || (signedIn() && request.auth.uid == uid);
+      allow list: if admin();
+      allow create, update: if admin() && request.resource.data.keys().hasOnly(['inventory','stockMovements','stockCounts','suppliers','testLosses','labModules']) && request.resource.data.keys().hasAll(['inventory','stockMovements','stockCounts','suppliers','testLosses','labModules']) && request.resource.data.inventory is bool && request.resource.data.stockMovements is bool && request.resource.data.stockCounts is bool && request.resource.data.suppliers is bool && request.resource.data.testLosses is bool && request.resource.data.labModules is bool;
+      allow delete: if admin();
+    }
     match /kadro/{uid} {
       allow get: if signedIn() && (request.auth.uid == uid || admin());
       allow list: if admin();
@@ -41,14 +50,14 @@ service cloud.firestore {
       allow delete: if admin() && uid != request.auth.uid;
     }
     match /products/{id} {
-      allow read: if activeStaff();
-      allow create: if activeStaff() && validProduct(request.resource.data)
+      allow read: if canAccess('inventory');
+      allow create: if canAccess('inventory') && validProduct(request.resource.data)
         && request.resource.data.quantity == 0
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.updatedBy == request.auth.uid
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
-      allow update: if activeStaff() && validProduct(request.resource.data)
+      allow update: if canAccess('inventory') && validProduct(request.resource.data)
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.createdBy == resource.data.createdBy
         && request.resource.data.updatedBy == request.auth.uid
@@ -69,8 +78,8 @@ service cloud.firestore {
       allow delete: if admin() && resource.data.quantity == 0;
     }
     match /stockCounts/{id} {
-      allow read: if activeStaff();
-      allow create: if activeStaff()
+      allow read: if canAccess('stockCounts');
+      allow create: if canAccess('stockCounts')
         && request.resource.data.keys().hasAll(['productId','productName','systemQuantity','actualQuantity','difference','note','email','uid','createdAt'])
         && request.resource.data.keys().hasOnly(['productId','productName','systemQuantity','actualQuantity','difference','note','email','uid','createdAt'])
         && request.resource.data.productId is string
@@ -89,8 +98,8 @@ service cloud.firestore {
       allow delete: if admin();
     }
     match /suppliers/{id} {
-      allow read: if activeStaff();
-      allow create: if activeStaff()
+      allow read: if canAccess('suppliers');
+      allow create: if canAccess('suppliers')
         && request.resource.data.keys().hasAll(['name','taxNo','phone','email','contact','address','createdAt','createdBy'])
         && request.resource.data.keys().hasOnly(['name','taxNo','phone','email','contact','address','createdAt','createdBy'])
         && request.resource.data.name is string
@@ -118,8 +127,8 @@ service cloud.firestore {
       allow delete: if admin();
     }
     match /stockMovements/{id} {
-      allow read: if activeStaff();
-      allow create: if activeStaff()
+      allow read: if canAccess('stockMovements');
+      allow create: if canAccess('stockMovements')
         && request.resource.data.keys().hasAll(['productId','productName','type','quantity','before','after','note','email','uid','createdAt'])
         && request.resource.data.keys().hasOnly(['productId','productName','type','quantity','before','after','note','email','uid','createdAt','supplierId','supplierName','dispatchNo','dispatchDate','dispatchPath','unitCost','totalCost'])
         && request.resource.data.productId is string
@@ -164,8 +173,8 @@ service cloud.firestore {
       allow update, delete: if false;
     }
     match /testLosses/{id} {
-      allow read: if activeStaff();
-      allow create: if activeStaff()
+      allow read: if canAccess('testLosses');
+      allow create: if canAccess('testLosses')
         && request.resource.data.keys().hasAll(['productId','productName','type','testCount','note','email','uid','createdAt'])
         && request.resource.data.keys().hasOnly(['productId','productName','type','testCount','note','email','uid','createdAt'])
         && request.resource.data.productId is string
@@ -183,8 +192,8 @@ service cloud.firestore {
       allow delete: if admin();
     }
     match /labModules/{id} {
-      allow read: if activeStaff();
-      allow create: if activeStaff()
+      allow read: if canAccess('labModules');
+      allow create: if canAccess('labModules')
         && request.resource.data.category in ['kit','qc','device','order','capa','patient','audit']
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.email == request.auth.token.email
