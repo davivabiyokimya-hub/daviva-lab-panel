@@ -38,7 +38,7 @@ service cloud.firestore {
       allow list: if admin();
       allow create, update: if admin() && validStaff(request.resource.data)
         && request.resource.data.get('updatedBy',request.auth.uid) == request.auth.uid;
-      allow delete: if false;
+      allow delete: if admin() && uid != request.auth.uid;
     }
     match /products/{id} {
       allow read: if activeStaff();
@@ -66,7 +66,7 @@ service cloud.firestore {
             && getAfter(movementPath(request.resource.data.lastMovementId)).data.before == resource.data.quantity
             && getAfter(movementPath(request.resource.data.lastMovementId)).data.uid == request.auth.uid)
         );
-      allow delete: if false;
+      allow delete: if admin() && resource.data.quantity == 0;
     }
     match /stockCounts/{id} {
       allow read: if activeStaff();
@@ -85,7 +85,8 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/products/$(request.resource.data.productId))
         && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.name == request.resource.data.productName
         && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.quantity == request.resource.data.systemQuantity;
-      allow update, delete: if false;
+      allow update: if admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['actualQuantity','difference','note','updatedAt','updatedBy']) && request.resource.data.actualQuantity is int && request.resource.data.actualQuantity >= 0 && request.resource.data.difference == request.resource.data.actualQuantity - resource.data.systemQuantity && request.resource.data.note is string && request.resource.data.note.size() <= 250 && request.resource.data.updatedBy == request.auth.uid && request.resource.data.updatedAt == request.time;
+      allow delete: if admin();
     }
     match /suppliers/{id} {
       allow read: if activeStaff();
@@ -178,7 +179,8 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.createdAt == request.time;
-      allow update, delete: if false;
+      allow update: if admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['testCount','note','updatedAt','updatedBy']) && request.resource.data.testCount is int && request.resource.data.testCount > 0 && request.resource.data.note is string && request.resource.data.note.size() <= 250 && request.resource.data.updatedBy == request.auth.uid && request.resource.data.updatedAt == request.time;
+      allow delete: if admin();
     }
     match /{document=**} { allow read, write: if false; }
   }
