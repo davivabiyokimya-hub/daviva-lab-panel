@@ -1,0 +1,27 @@
+(()=>{
+const page=document.getElementById("dutyRoster");if(!page)return;
+const hero=page.querySelector(".panel"),editor=document.getElementById("dutyEditor"),insights=document.getElementById("dutyInsights"),requests=document.getElementById("dutyRequestCenter"),tablePanel=document.getElementById("dutyRows")?.closest(".panel");
+if(!hero||!tablePanel)return;hero.classList.add("dv-duty-hero");
+const title=hero.querySelector("h2");if(title)title.textContent="Personel Nöbet Merkezi";
+const subtitle=hero.querySelector(".muted");if(subtitle)subtitle.textContent="Nöbet takvimi • İzin ve vardiya değişimleri • Personel planlama";
+const tabs=document.createElement("div");tabs.className="dv-duty-tabs";tabs.setAttribute("role","tablist");
+const calendarPanel=document.createElement("div");calendarPanel.className="panel";calendarPanel.id="dvDutyCalendarPanel";
+calendarPanel.innerHTML='<div class="dv-duty-calhead"><h3>Aylık Nöbet Takvimi</h3><div class="actions"><button class="btn alt" id="dvDutyPrev" type="button" aria-label="Önceki ay">‹ Önceki</button><button class="btn alt" id="dvDutyNext" type="button" aria-label="Sonraki ay">Sonraki ›</button></div></div><div class="dv-duty-key"><span><i class="dv-duty-dot"></i>Gündüz</span><span><i class="dv-duty-dot night"></i>Gece</span><span><i class="dv-duty-dot full"></i>24 Saat</span><span><i class="dv-duty-dot leave"></i>İzin</span></div><div id="dvDutyStats" class="dv-duty-statline"></div><div id="dvDutyCalendar" class="dv-duty-calendar" aria-label="Aylık nöbet takvimi"></div><p class="hint">Takvim, erişim yetkinize göre yüklenen nöbetleri gösterir. Düzenleme ve onay işlemleri ilgili sekmelerden yapılır.</p>';
+hero.after(tabs);tabs.after(calendarPanel);
+const groups=[["calendar","📅 Nöbet Takvimi",[calendarPanel,tablePanel]],["manage","✏️ Nöbet Planlama",[editor]],["requests","🏖️ İzin ve Değişim",[requests]],["reports","📊 Analiz ve Rapor",[insights]]];
+let selected="calendar";const controls=[];
+function activate(key){selected=key;for(const [id,,nodes] of groups){for(const node of nodes)if(node)node.classList.toggle("dv-duty-hidden",id!==key)}for(const item of controls)item.button.setAttribute("aria-selected",String(item.id===key))}
+for(const [id,label] of groups){const button=document.createElement("button");button.type="button";button.textContent=label;button.setAttribute("role","tab");button.onclick=()=>activate(id);tabs.append(button);controls.push({id,button})}
+const monthInput=document.getElementById("dutyMonth"),rows=document.getElementById("dutyRows"),calendar=document.getElementById("dvDutyCalendar"),stats=document.getElementById("dvDutyStats");
+const names=["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"];const shiftClass=s=>s==="Gece"?"night":s==="24 Saat"?"full":s==="İzin"?"leave":"";
+const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-")};
+function render(){const period=monthInput?.value||"";if(!/^\d{4}-\d{2}$/.test(period))return;const [y,m]=period.split("-").map(Number);if(m<1||m>12)return;const days=new Date(y,m,0).getDate(),offset=(new Date(y,m-1,1).getDay()+6)%7;const byDay=new Map();let total=0,nights=0,leaves=0;
+for(const tr of rows?.rows||[]){const cells=[...tr.cells].map(x=>x.textContent.trim()),date=cells[0],shift=cells[2];if(!date?.startsWith(period))continue;const list=byDay.get(date)||[];list.push({name:cells[1],shift});byDay.set(date,list);if(shift==="İzin")leaves++;else total++;if(shift==="Gece"||shift==="24 Saat")nights++}
+calendar.replaceChildren();for(const name of names){const el=document.createElement("div");el.className="dv-duty-weekday";el.textContent=name;calendar.append(el)}
+for(let i=0;i<offset;i++){const el=document.createElement("div");el.className="dv-duty-day is-empty";el.setAttribute("aria-hidden","true");calendar.append(el)}
+for(let d=1;d<=days;d++){const date=period+"-"+String(d).padStart(2,"0"),box=document.createElement("div");box.className="dv-duty-day"+(date===today()?" is-today":"");const number=document.createElement("div");number.className="dv-duty-number";number.textContent=d;box.append(number);for(const x of byDay.get(date)||[]){const chip=document.createElement("span");chip.className="dv-duty-chip "+shiftClass(x.shift);chip.textContent=x.name+" · "+x.shift;chip.title=x.name+" — "+x.shift;box.append(chip)}calendar.append(box)}
+stats.replaceChildren();for(const [number,label] of [[total,"Görev"],[nights,"Gece / 24 Saat"],[leaves,"İzin"],[byDay.size,"Kayıtlı Gün"]]){const item=document.createElement("span"),b=document.createElement("b");b.textContent=number;item.append(b,document.createTextNode(label));stats.append(item)}}
+const changeMonth=delta=>{const match=/^(\d{4})-(\d{2})$/.exec(monthInput.value);if(!match)return;const d=new Date(Number(match[1]),Number(match[2])-1+delta,1);monthInput.value=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");monthInput.dispatchEvent(new Event("change",{bubbles:true}));document.getElementById("dutyReload")?.click()};
+document.getElementById("dvDutyPrev").onclick=()=>changeMonth(-1);document.getElementById("dvDutyNext").onclick=()=>changeMonth(1);
+monthInput?.addEventListener("change",render);new MutationObserver(render).observe(rows,{childList:true,subtree:true});activate("calendar");render();
+})();
