@@ -1,0 +1,33 @@
+/* DAVIVA LAB — shared design layer. Presentation only; no Firestore mutations. */
+:root{--dv-ink:#173653;--dv-line:#e0eaf3;--dv-shadow:0 8px 26px rgba(18,53,84,.07);--dv-accent:#176ec0}
+body{background:linear-gradient(180deg,#f1f6fb 0%,#f7fafe 55%,#f3f7fb 100%);color:var(--dv-ink)}
+.layout>main{padding-top:24px}
+.layout>main .page>.panel,.layout>main .page>.card{border:1px solid var(--dv-line);border-radius:18px;box-shadow:var(--dv-shadow)}
+.layout>main .page>.panel h2,.layout>main .page>.panel h3{letter-spacing:-.025em;color:#173d60}
+.layout>main .page>.panel h3{font-size:18px}
+.layout>main .page>.panel>p.muted{line-height:1.65}
+.layout>main .page .cards>.card{border:1px solid #e0eaf3;border-radius:15px;box-shadow:0 4px 14px #12385b09;position:relative;overflow:hidden}
+.layout>main .page .cards>.card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#207bd0,#60b9e5)}
+.layout>main .page .cards>.card:nth-child(2):before{background:linear-gradient(#735dd6,#b09af6)}
+.layout>main .page .cards>.card:nth-child(3):before{background:linear-gradient(#0a9c85,#75d2b7)}
+.layout>main .page .cards>.card:nth-child(4):before{background:linear-gradient(#dc9c2c,#f5d17a)}
+.layout>main .page .cards>.card .metric{color:#173e62;letter-spacing:-.04em}
+.layout>main .page .btn{transition:transform .14s,box-shadow .14s,background .14s}
+.layout>main .page .btn:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 13px #1c568a1d}
+.layout>main .page .btn:focus-visible,.layout>main .page button:focus-visible,.layout>main .page input:focus-visible,.layout>main .page select:focus-visible{outline:3px solid #70b9f5;outline-offset:2px}
+.layout>main .page .field input,.layout>main .page .field select,.layout>main .page .field textarea{border-radius:11px;border-color:#cddde9;transition:border-color .15s,box-shadow .15s}
+.layout>main .page .field input:focus,.layout>main .page .field select:focus,.layout>main .page .field textarea:focus{border-color:#448fcd;box-shadow:0 0 0 3px #448fcd1b}
+.layout>main .page .scroll{border:1px solid #e6edf4;border-radius:12px}
+.layout>main .page .scroll th{background:#f3f8fc;color:#45617b;position:sticky;top:0;z-index:1}
+.layout>main .page .scroll td{border-color:#eaf0f6}
+.layout>main .page .scroll tbody tr:nth-child(even){background:#fbfdff}
+.layout>main .page .scroll tbody tr:hover{background:#f0f8ff}
+.layout>main .page .actions{align-items:center}
+.layout>main .page .pill{border-radius:8px}
+#notifications>.panel:first-child,#permissions>.panel:first-child,#deviceCenter>.panel:first-child,#qcAnalytics>.panel:first-child,#smartCenter>.panel:first-child{border-top:4px solid #2279c4}
+#notifications #noticeRows>.card{border-radius:13px;border:1px solid #e1eaf2;box-shadow:0 3px 12px #12385b0b}
+#notifications #noticeRows>.card strong{color:#163e64}
+#dutyRoster .dv-duty-hero h2{color:#fff!important}
+@media(max-width:850px){.layout>main{padding-top:14px}.layout>main .page>.panel{padding:16px}.layout>main .page .scroll{overflow:auto}.layout>main .page .cards{gap:9px}}
+@media(prefers-reduced-motion:reduce){.layout>main .page .btn,.layout>main .page .field input,.layout>main .page .field select{transition:none!important}}
+@media print{body{background:#fff}.layout>main .page>.panel{box-shadow:none!important;border-color:#bbb}}
