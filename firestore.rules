@@ -101,7 +101,20 @@ service cloud.firestore {
         && request.resource.data.address is string && request.resource.data.address.size() <= 250
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.createdAt == request.time;
-      allow update, delete: if false;
+      allow update: if admin()
+        && request.resource.data.keys().hasAll(['name','taxNo','phone','email','contact','address','createdAt','createdBy','updatedAt','updatedBy'])
+        && request.resource.data.keys().hasOnly(['name','taxNo','phone','email','contact','address','createdAt','createdBy','updatedAt','updatedBy'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 160
+        && request.resource.data.taxNo is string && request.resource.data.taxNo.size() <= 20
+        && request.resource.data.phone is string && request.resource.data.phone.size() <= 40
+        && request.resource.data.email is string && request.resource.data.email.size() <= 160
+        && request.resource.data.contact is string && request.resource.data.contact.size() <= 100
+        && request.resource.data.address is string && request.resource.data.address.size() <= 250
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedBy == request.auth.uid;
+      allow delete: if false;
     }
     match /stockMovements/{id} {
       allow read: if activeStaff();
