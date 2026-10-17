@@ -1,0 +1,31 @@
+(()=>{"use strict";
+const style=document.createElement("style");style.textContent=`
+#dvMobileBar,#dvMobileScan{display:none}
+@media(max-width:820px){
+body{padding-bottom:calc(76px + env(safe-area-inset-bottom))!important}
+#dvMobileBar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;bottom:0;left:0;right:0;z-index:990;background:#fff;border-top:1px solid #d9e5ef;padding:7px 5px calc(7px + env(safe-area-inset-bottom));box-shadow:0 -4px 22px #102b4822}
+#dvMobileBar button{border:0;background:transparent;color:#4b6479;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;padding:6px 1px;border-radius:10px;min-width:0}
+#dvMobileBar button span{font-size:21px}#dvMobileBar button.active{background:#e6f3ff;color:#075a92;font-weight:700}
+#dvMobileScan{display:none;position:fixed;inset:0;z-index:1200;background:#102b48e8;padding:18px;align-items:center;justify-content:center}
+#dvMobileScan.open{display:flex}
+#dvMobileScan .dv-scan-box{background:#fff;width:min(100%,450px);max-height:90dvh;overflow:auto;border-radius:18px;padding:18px}
+#dvMobileScan video{width:100%;max-height:45dvh;object-fit:cover;border-radius:12px;background:#111}
+#dvMobileScan .dv-scan-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#dvMobileScan input{width:100%;font-size:16px;padding:12px;border:1px solid #b5c8d9;border-radius:9px}
+}`;document.head.append(style);
+const bar=document.createElement("nav");bar.id="dvMobileBar";bar.setAttribute("aria-label","Mobil hızlı menü");document.body.append(bar);
+const links=[["🏠","Ana Sayfa",["personalHome","dashboard"]],["📦","Stok",["products","operations"]],["📷","Barkod",null],["🔔","Bildirim",["notifications"]],["☰","Menü",null]];
+const findPage=ids=>ids?.map(id=>document.querySelector('aside nav button[data-page="'+id+'"]')).find(b=>b&&!b.classList.contains("hidden"));
+function go(ids){const btn=findPage(ids);if(btn){btn.click();return true}return false}
+let drawer=false;
+function build(){bar.replaceChildren();links.forEach(([icon,label,ids],i)=>{const b=document.createElement("button");b.type="button";b.innerHTML="<span aria-hidden=\"true\">"+icon+"</span>";b.append(document.createTextNode(label));b.setAttribute("aria-label",label);b.onclick=()=>{if(i===2)openScanner();else if(i===4){drawer=!drawer;document.querySelector(".layout>aside")?.classList.toggle("dv-menu-open",drawer);const nav=document.querySelector(".layout>aside nav");if(nav){nav.scrollIntoView({behavior:"smooth",block:"start"});nav.style.maxHeight=drawer?"65dvh":""}b.classList.toggle("active",drawer)}else if(!go(ids)){status.textContent="Bu modüle erişim yetkiniz yok."}};bar.append(b)})}
+const scan=document.createElement("div");scan.id="dvMobileScan";scan.setAttribute("role","dialog");scan.setAttribute("aria-modal","true");scan.setAttribute("aria-label","Barkod okutma");scan.innerHTML='<div class="dv-scan-box"><h3>📷 Barkod / QR Okut</h3><p class="muted">Kamera desteği varsa kodu okutun. Stok miktarı otomatik değiştirilmez.</p><video id="dvScanVideo" playsinline muted autoplay></video><p id="dvScanStatus" role="status">Hazır</p><label class="field">Okutulan kod<input id="dvScanValue" autocomplete="off" placeholder="Barkod veya ürün kodu"></label><div class="dv-scan-actions"><button type="button" class="btn" id="dvScanUse">Stokta Ara</button><button type="button" class="btn alt" id="dvScanCopy">Kopyala</button><button type="button" class="btn alt" id="dvScanClose">Kapat</button></div></div>';document.body.append(scan);
+const status=scan.querySelector("#dvScanStatus"),value=scan.querySelector("#dvScanValue"),video=scan.querySelector("video");let stream=null,detector=null,active=false,loopId=0;
+function stop(){active=false;loopId++;if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}video.srcObject=null}
+function close(){stop();scan.classList.remove("open")}
+async function openScanner(){scan.classList.add("open");value.value="";status.textContent="Kamera başlatılıyor…";if(!navigator.mediaDevices?.getUserMedia||!("BarcodeDetector" in window)){status.textContent="Bu tarayıcıda kamera ile barkod okuma desteklenmiyor. Kodu elle girebilirsiniz.";return}try{detector=new BarcodeDetector({formats:["qr_code","code_128","code_39","ean_13","ean_8","upc_a","upc_e","itf","data_matrix"]});stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});if(!scan.classList.contains("open")){stop();return}video.srcObject=stream;await video.play();active=true;const token=++loopId;status.textContent="Kodu kameraya gösterin.";async function read(){if(!active||token!==loopId)return;try{const found=await detector.detect(video);if(found.length&&found[0].rawValue){value.value=found[0].rawValue;status.textContent="Kod okundu. Stokta Ara düğmesini kullanın.";stop();return}}catch(e){}if(active&&token===loopId)setTimeout(read,250)}read()}catch(e){stop();status.textContent="Kamera açılamadı. İzinleri kontrol edin veya kodu elle yazın."}}
+scan.querySelector("#dvScanClose").onclick=close;scan.addEventListener("click",e=>{if(e.target===scan)close()});document.addEventListener("keydown",e=>{if(e.key==="Escape"&&scan.classList.contains("open"))close()});
+scan.querySelector("#dvScanCopy").onclick=async()=>{if(!value.value.trim())return;try{await navigator.clipboard.writeText(value.value.trim());status.textContent="Kod kopyalandı."}catch(e){value.select();status.textContent="Kodu seçip kopyalayabilirsiniz."}};
+scan.querySelector("#dvScanUse").onclick=()=>{const code=value.value.trim();if(!code){status.textContent="Önce kod girin veya okutun.";return}close();if(!go(["products"])){status.textContent="Stok sayfasına erişim yok.";scan.classList.add("open");return}const fields=[...document.querySelectorAll('#products input, #products [type="search"], #scBarcode')];const field=fields.find(x=>/search|ara|barkod|barcode|kod/i.test([x.id,x.name,x.placeholder].join(" ")))||fields.find(x=>x.type==="search");if(field){field.value=code;field.dispatchEvent(new Event("input",{bubbles:true}));field.dispatchEvent(new Event("change",{bubbles:true}));field.focus()}else{scan.classList.add("open");status.textContent="Stok arama alanı bulunamadı. Kodu kopyalayıp stok bölümünde arayın."}};
+build();
+})();
