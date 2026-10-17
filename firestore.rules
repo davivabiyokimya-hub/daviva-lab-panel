@@ -210,6 +210,29 @@ service cloud.firestore {
         && request.resource.data.updatedAt == request.time;
       allow delete: if admin() && resource.data.category != 'audit';
     }
+    match /approvalRequests/{requestId} {
+      allow get, list: if admin() || (activeStaff() && resource.data.requesterUid == request.auth.uid);
+      allow create: if activeStaff()
+        && request.resource.data.keys().hasOnly(['type','title','description','status','requesterUid','requesterEmail','createdAt'])
+        && request.resource.data.keys().hasAll(['type','title','description','status','requesterUid','requesterEmail','createdAt'])
+        && request.resource.data.type in ['STOCK','MAINTENANCE','OTHER']
+        && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 120
+        && request.resource.data.description is string && request.resource.data.description.size() > 0 && request.resource.data.description.size() <= 1000
+        && request.resource.data.status == 'PENDING'
+        && request.resource.data.requesterUid == request.auth.uid
+        && request.resource.data.requesterEmail == request.auth.token.email
+        && request.resource.data.createdAt == request.time;
+      allow update: if admin()
+        && resource.data.status == 'PENDING'
+        && resource.data.requesterUid != request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','decisionNote','decidedBy','decidedAt'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasAll(['status','decisionNote','decidedBy','decidedAt'])
+        && request.resource.data.status in ['APPROVED','REJECTED']
+        && request.resource.data.decisionNote is string && request.resource.data.decisionNote.size() <= 500
+        && request.resource.data.decidedBy == request.auth.uid
+        && request.resource.data.decidedAt == request.time;
+      allow delete: if false;
+    }
     match /bloodUnits/{unitId} {
       allow read: if admin();
       allow create: if admin() && request.resource.data.uid == request.auth.uid && request.resource.data.status == 'AVAILABLE';
