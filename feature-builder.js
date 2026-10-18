@@ -1,0 +1,27 @@
+import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {getFirestore,collection,doc,getDoc,getDocs,addDoc,updateDoc,deleteDoc,serverTimestamp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+const db=getFirestore(),auth=getAuth(),nav=document.querySelector("aside nav"),main=document.querySelector("main");
+if(nav&&main){
+const manage=document.createElement("button");manage.type="button";manage.dataset.page="featureBuilder";manage.textContent="✚ Özellik Ekle";manage.className="hidden";nav.append(manage);
+const editor=document.createElement("section");editor.className="page hidden";editor.id="featureBuilder";
+editor.innerHTML='<div class="panel"><h2>✚ Kodsuz Özellik Oluşturucu</h2><p class="muted">Yeni bilgi, talimat, kontrol listesi veya duyuru ekranları oluşturun. Eklenen içerikler tüm aktif personele gösterilebilir. Bu araç yeni program kodu çalıştırmaz veya güvenlik yetkilerini değiştirmez.</p><form id="fbForm"><input id="fbId" type="hidden"><div class="formgrid"><label class="field">Özellik / ekran adı<input id="fbTitle" maxlength="80" required placeholder="Örn. Günlük Kontrol Listesi"></label><label class="field">Durum<select id="fbActive"><option value="true">Yayında</option><option value="false">Taslak</option></select></label><label class="field wide">İçerik<textarea id="fbContent" rows="9" maxlength="12000" placeholder="Ekranda gösterilecek açıklamalar, kontrol maddeleri ve talimatlar"></textarea></label></div><div class="actions"><button class="btn" type="submit">Özelliği Kaydet</button><button class="btn alt" id="fbClear" type="button">Yeni Özellik</button></div></form><p class="muted" id="fbStatus" role="status"></p><div id="fbItems"></div></div>';
+main.insertBefore(editor,main.querySelector("footer"));
+const $=id=>document.getElementById(id);let user=null,admin=false,items=[],pages=[];
+function openPage(page,button,title){document.querySelectorAll("main .page").forEach(x=>x.classList.toggle("hidden",x!==page));document.querySelectorAll("[data-page]").forEach(x=>x.classList.toggle("active",x===button));const h=$("heading");if(h)h.textContent=title}
+function clear(){ $("fbForm").reset();$("fbId").value="" }
+$("fbClear").onclick=clear;
+manage.onclick=()=>openPage(editor,manage,"Özellik Oluşturucu");
+function draw(){
+for(const x of pages){x.button.remove();x.page.remove()}pages=[];
+const list=$("fbItems");list.replaceChildren();
+for(const item of items){
+if(item.active){const button=document.createElement("button");button.type="button";button.dataset.page="custom-"+item.id;button.textContent="▤ "+item.title;nav.append(button);
+const page=document.createElement("section");page.className="page hidden";page.id="custom-"+item.id;
+const panel=document.createElement("div");panel.className="panel";const title=document.createElement("h2");title.textContent=item.title;const body=document.createElement("div");body.style.whiteSpace="pre-wrap";body.textContent=item.content;panel.append(title,body);page.append(panel);main.insertBefore(page,main.querySelector("footer"));button.onclick=()=>openPage(page,button,item.title);pages.push({button,page})}
+if(admin){const row=document.createElement("div");row.className="panel";row.style.marginTop="10px";const title=document.createElement("strong");title.textContent=item.title+(item.active?" · Yayında":" · Taslak");const actions=document.createElement("div");actions.className="actions";const edit=document.createElement("button");edit.type="button";edit.className="btn alt";edit.textContent="Düzenle";edit.onclick=()=>{$("fbId").value=item.id;$("fbTitle").value=item.title;$("fbContent").value=item.content;$("fbActive").value=String(item.active);editor.scrollIntoView({behavior:"smooth"})};const del=document.createElement("button");del.type="button";del.className="btn alt";del.textContent="Sil";del.onclick=async()=>{if(!confirm(item.title+" özelliği silinsin mi?"))return;try{await deleteDoc(doc(db,"customPages",item.id));await reload()}catch(e){$("fbStatus").textContent=e.message}};actions.append(edit,del);row.append(title,actions);list.append(row)}
+}
+}
+async function reload(){try{const snap=await getDocs(collection(db,"customPages"));items=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.title.localeCompare(b.title,"tr"));draw();$("fbStatus").textContent=items.length+" özellik kayıtlı."}catch(e){$("fbStatus").textContent="Özellikler yüklenemedi: "+e.message}}
+$("fbForm").onsubmit=async e=>{e.preventDefault();if(!admin||!user)return;const id=$("fbId").value,title=$("fbTitle").value.trim(),content=$("fbContent").value.trim(),active=$("fbActive").value==="true";if(!title)return;const data={title,content,active,updatedBy:user.uid,updatedAt:serverTimestamp()};try{if(id)await updateDoc(doc(db,"customPages",id),data);else await addDoc(collection(db,"customPages"),data);clear();await reload()}catch(err){$("fbStatus").textContent="Kaydedilemedi: "+err.message}};
+let epoch=0;onAuthStateChanged(auth,async u=>{const n=++epoch;user=null;admin=false;manage.classList.add("hidden");editor.classList.add("hidden");items=[];draw();if(!u)return;try{const own=await getDoc(doc(db,"kadro",u.uid));if(n!==epoch)return;const d=own.data();if(d?.aktif!==true||d["e-posta"]!==u.email)return;user=u;admin=d.rol==="admin";if(admin)manage.classList.remove("hidden");await reload()}catch(e){$("fbStatus").textContent="Yetki kontrolü başarısız: "+e.message}})
+}
