@@ -335,7 +335,7 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /dutyRequests/{requestId} {
-      allow read: if admin() || (activeStaff() && resource.data.requesterUid == request.auth.uid);
+      allow read: if operationalManager() || (activeStaff() && resource.data.requesterUid == request.auth.uid);
       allow create: if activeStaff()
         && request.resource.data.keys().hasOnly(['type','from','to','targetUid','targetEmail','reason','status','requesterUid','requesterEmail','createdAt'])
         && request.resource.data.keys().hasAll(['type','from','to','targetUid','targetEmail','reason','status','requesterUid','requesterEmail','createdAt'])
@@ -350,7 +350,7 @@ service cloud.firestore {
         && request.resource.data.requesterUid == request.auth.uid
         && request.resource.data.requesterEmail == request.auth.token.email
         && request.resource.data.createdAt == request.time;
-      allow update: if admin()
+      allow update: if operationalManager()
         && resource.data.status == 'PENDING'
         && resource.data.requesterUid != request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','decisionNote','decidedBy','decidedAt'])
@@ -362,7 +362,7 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /dutyRoster/{entryId} {
-      allow read: if admin() || (activeStaff() && resource.data.personUid == request.auth.uid);
+      allow read: if operationalManager() || (activeStaff() && resource.data.personUid == request.auth.uid);
       allow create: if operationalManager()
         && request.resource.data.keys().hasOnly(['personUid','personName','date','shift','start','end','note','createdBy','createdAt'])
         && request.resource.data.keys().hasAll(['personUid','personName','date','shift','start','end','note','createdBy','createdAt'])
