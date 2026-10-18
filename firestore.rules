@@ -77,6 +77,10 @@ service cloud.firestore {
         && request.resource.data.get('updatedBy',request.auth.uid) == request.auth.uid;
       allow delete: if admin() && uid != request.auth.uid;
     }
+    match /uiSettings/{id} {
+      allow read: if activeStaff();
+      allow write: if admin() && id == 'global' && request.resource.data.keys().hasOnly(['labels','updatedBy','updatedAt']) && request.resource.data.keys().hasAll(['labels','updatedBy','updatedAt']) && request.resource.data.labels is map && request.resource.data.labels.size() <= 60 && request.resource.data.updatedBy == request.auth.uid && request.resource.data.updatedAt == request.time;
+    }
     match /products/{id} {
       allow read: if canAccess('inventory');
       allow create: if canAccess('inventory') && validProduct(request.resource.data)
