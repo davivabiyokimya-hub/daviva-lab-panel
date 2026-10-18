@@ -7,11 +7,9 @@ service cloud.firestore {
       return signedIn() && exists(staffPath())
         && get(staffPath()).data.aktif == true
         && get(staffPath()).data['e-posta'] == request.auth.token.email
-        && get(staffPath()).data.rol in ['admin', 'stok', 'lab_sorumlusu'];
+        && get(staffPath()).data.rol in ['admin', 'stok'];
     }
     function admin() { return activeStaff() && get(staffPath()).data.rol == 'admin'; }
-    function labManager() { return activeStaff() && get(staffPath()).data.rol == 'lab_sorumlusu'; }
-    function operationalManager() { return admin() || labManager(); }
     function productPath(id) { return /databases/$(database)/documents/products/$(id); }
     function movementPath(id) { return /databases/$(database)/documents/stockMovements/$(id); }
     function validProduct(d) {
@@ -33,7 +31,7 @@ service cloud.firestore {
       return d.keys().hasAll(['aktif','e-posta','rol'])
         && d.keys().hasOnly(['aktif','e-posta','rol','adSoyad','updatedAt','updatedBy'])
         && d.aktif is bool && d['e-posta'] is string
-        && d['e-posta'].size() <= 254 && d.get('adSoyad','') is string && d.get('adSoyad','').size() <= 120 && d.rol in ['admin','stok','lab_sorumlusu'];
+        && d['e-posta'].size() <= 254 && d.get('adSoyad','') is string && d.get('adSoyad','').size() <= 120 && d.rol in ['admin','stok'];
     }
     function canAccess(feature) {
       return admin() || (activeStaff() && (!exists(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)) || get(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)).data.get(feature, false) == true));
@@ -73,16 +71,10 @@ service cloud.firestore {
       allow delete: if admin();
     }
     match /kadro/{uid} {
-      allow get: if signedIn() && (request.auth.uid == uid || operationalManager());
-      allow list: if operationalManager();
-      allow create: if admin() && validStaff(request.resource.data);
-      allow update: if (admin() && validStaff(request.resource.data)
-        && request.resource.data.get('updatedBy',request.auth.uid) == request.auth.uid)
-        || (labManager() && validStaff(request.resource.data)
-          && resource.data.rol != 'admin'
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['adSoyad','updatedAt','updatedBy'])
-          && request.resource.data.updatedBy == request.auth.uid
-          && request.resource.data.updatedAt == request.time);
+      allow get: if signedIn() && (request.auth.uid == uid || admin());
+      allow list: if admin();
+      allow create, update: if admin() && validStaff(request.resource.data)
+        && request.resource.data.get('updatedBy',request.auth.uid) == request.auth.uid;
       allow delete: if admin() && uid != request.auth.uid;
     }
     match /uiSettings/{id} {
@@ -103,7 +95,7 @@ service cloud.firestore {
         && request.resource.data.updatedBy == request.auth.uid
         && request.resource.data.updatedAt == request.time
         && (
-          (operationalManager()
+          (admin()
             && request.resource.data.quantity == resource.data.quantity
             && request.resource.data.get('lastMovementId','') == resource.data.get('lastMovementId',''))
           ||
@@ -134,7 +126,7 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/products/$(request.resource.data.productId))
         && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.name == request.resource.data.productName
         && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.quantity == request.resource.data.systemQuantity;
-      allow update: if operationalManager() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['actualQuantity','difference','note','updatedAt','updatedBy']) && request.resource.data.actualQuantity is int && request.resource.data.actualQuantity >= 0 && request.resource.data.difference == request.resource.data.actualQuantity - resource.data.systemQuantity && request.resource.data.note is string && request.resource.data.note.size() <= 250 && request.resource.data.updatedBy == request.auth.uid && request.resource.data.updatedAt == request.time;
+      allow update: if admin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['actualQuantity','difference','note','updatedAt','updatedBy']) && request.resource.data.actualQuantity is int && request.resource.data.actualQuantity >= 0 && request.resource.data.difference == request.resource.data.actualQuantity - resource.data.systemQuantity && request.resource.data.note is string && request.resource.data.note.size() <= 250 && request.resource.data.updatedBy == request.auth.uid && request.resource.data.updatedAt == request.time;
       allow delete: if admin();
     }
     match /suppliers/{id} {
@@ -151,7 +143,7 @@ service cloud.firestore {
         && request.resource.data.address is string && request.resource.data.address.size() <= 250
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.createdAt == request.time;
-      allow update: if operationalManager()
+      allow update: if admin()
         && request.resource.data.keys().hasAll(['name','taxNo','phone','email','contact','address','createdAt','createdBy','updatedAt','updatedBy'])
         && request.resource.data.keys().hasOnly(['name','taxNo','phone','email','contact','address','createdAt','createdBy','updatedAt','updatedBy'])
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 160
@@ -262,7 +254,7 @@ service cloud.firestore {
         && request.resource.data.requesterUid == request.auth.uid
         && request.resource.data.requesterEmail == request.auth.token.email
         && request.resource.data.createdAt == request.time;
-      allow update: if operationalManager()
+      allow update: if admin()
         && resource.data.status == 'PENDING'
         && resource.data.requesterUid != request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','decisionNote','decidedBy','decidedAt'])
@@ -335,7 +327,7 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /dutyRequests/{requestId} {
-      allow read: if operationalManager() || (activeStaff() && resource.data.requesterUid == request.auth.uid);
+      allow read: if admin() || (activeStaff() && resource.data.requesterUid == request.auth.uid);
       allow create: if activeStaff()
         && request.resource.data.keys().hasOnly(['type','from','to','targetUid','targetEmail','reason','status','requesterUid','requesterEmail','createdAt'])
         && request.resource.data.keys().hasAll(['type','from','to','targetUid','targetEmail','reason','status','requesterUid','requesterEmail','createdAt'])
@@ -350,7 +342,7 @@ service cloud.firestore {
         && request.resource.data.requesterUid == request.auth.uid
         && request.resource.data.requesterEmail == request.auth.token.email
         && request.resource.data.createdAt == request.time;
-      allow update: if operationalManager()
+      allow update: if admin()
         && resource.data.status == 'PENDING'
         && resource.data.requesterUid != request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','decisionNote','decidedBy','decidedAt'])
@@ -362,8 +354,8 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /dutyRoster/{entryId} {
-      allow read: if operationalManager() || (activeStaff() && resource.data.personUid == request.auth.uid);
-      allow create: if operationalManager()
+      allow read: if admin() || (activeStaff() && resource.data.personUid == request.auth.uid);
+      allow create: if admin()
         && request.resource.data.keys().hasOnly(['personUid','personName','date','shift','start','end','note','createdBy','createdAt'])
         && request.resource.data.keys().hasAll(['personUid','personName','date','shift','start','end','note','createdBy','createdAt'])
         && request.resource.data.personUid is string
