@@ -426,6 +426,25 @@ service cloud.firestore {
       allow create, update: if admin() && id == 'interface' && request.resource.data.updatedBy == request.auth.uid && request.resource.data.updatedAt == request.time;
       allow delete: if false;
     }
+    match /customTableSchemas/{id} {
+      allow read: if activeStaff();
+      allow create, update: if admin()
+        && request.resource.data.keys().hasOnly(['name','columns','updatedBy','updatedAt'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
+        && request.resource.data.columns is list && request.resource.data.columns.size() <= 30
+        && request.resource.data.updatedBy == request.auth.uid && request.resource.data.updatedAt == request.time;
+      allow delete: if admin();
+    }
+    match /customTableRecords/{id} {
+      allow read: if admin();
+      allow create, update: if admin()
+        && request.resource.data.keys().hasOnly(['tableId','values','updatedBy','updatedAt'])
+        && request.resource.data.tableId is string
+        && exists(/databases/$(database)/documents/customTableSchemas/$(request.resource.data.tableId))
+        && request.resource.data.values is map
+        && request.resource.data.updatedBy == request.auth.uid && request.resource.data.updatedAt == request.time;
+      allow delete: if admin();
+    }
     match /{document=**} { allow read, write: if false; }
   }
 }
