@@ -21,7 +21,7 @@ function items(){
   });
  }
  document.querySelectorAll("aside nav button").forEach((node,index)=>{const key="nav:"+(node.dataset.page||index);result.push({key,node,text:node.textContent.trim(),page:"Menü",label:"Menü · "+node.textContent.trim()})});
- return result.slice(0,600);
+ return result.slice(0,250);
 }
 function apply(){
  for(const entry of items()){
@@ -51,7 +51,7 @@ el("vtSave").onclick=async()=>{
   const val=input.value.trim(),key=input.dataset.key;
   if(val&&val!==defaults.get(key))next[key]=val;else delete next[key];
  }
- if(Object.keys(next).length>600)return status("En fazla 600 alan düzenlenebilir.");
+ if(Object.keys(next).length>250)return status("En fazla 250 alan düzenlenebilir.");
  try{await setDoc(doc(db,"uiTextOverrides","global"),{values:next,updatedBy:uid,updatedAt:serverTimestamp()});values=next;apply();status("Ekran metinleri kaydedildi.")}catch(e){status("Kaydedilemedi: "+e.message)}
 };
 el("vtReset").onclick=async()=>{if(!allowed||!confirm("Özelleştirilmiş tüm görünüm metinleri sıfırlansın mı?"))return;try{await setDoc(doc(db,"uiTextOverrides","global"),{values:{},updatedBy:uid,updatedAt:serverTimestamp()});values={};apply();draw()}catch(e){status("Sıfırlanamadı: "+e.message)}};
