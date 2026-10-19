@@ -445,6 +445,15 @@ service cloud.firestore {
         && request.resource.data.updatedBy == request.auth.uid && request.resource.data.updatedAt == request.time;
       allow delete: if admin();
     }
+    match /climateDevices/{id} {
+      allow read: if activeStaff();
+      allow create, update, delete: if admin();
+    }
+    match /climateReadings/{id} {
+      allow read: if activeStaff();
+      allow create: if activeStaff() && request.resource.data.createdBy == request.auth.uid && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
     match /{document=**} { allow read, write: if false; }
   }
 }
