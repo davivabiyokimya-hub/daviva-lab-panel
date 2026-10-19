@@ -26,7 +26,7 @@ const heading=document.createElement("h3");heading.textContent=title;heading.sty
 const desc=document.createElement("p");desc.className="muted";desc.textContent=description;
 const go=document.createElement("button");go.type="button";go.className="btn alt";go.textContent="Yönet →";go.onclick=()=>{
 const link=document.querySelector('aside nav [data-page="'+target+'"]');if(!link||link.classList.contains("hidden")){document.getElementById("settingsStatus").textContent="Bu bölüm hesabınızda henüz erişilebilir değil.";return}
-link.click();const input=document.getElementById(field);if(input){input.scrollIntoView({behavior:"smooth",block:"center"});input.focus({preventScroll:true})}
+link.click();const input=field?document.getElementById(field):null;if(input){input.scrollIntoView({behavior:"smooth",block:"center"});input.focus({preventScroll:true})}
 };
 card.append(heading,desc,go);page.querySelector("#settingsLinks").append(card)
 }
