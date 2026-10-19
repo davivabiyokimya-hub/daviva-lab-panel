@@ -17,6 +17,15 @@ service firebase.storage {
         && request.resource.metadata.uid == request.auth.uid;
       allow update, delete: if false;
     }
+    match /device-inserts/{deviceId}/{fileName} {
+      allow read: if activeStaff();
+      allow create: if activeStaff()
+        && request.resource.size <= 20 * 1024 * 1024
+        && request.resource.contentType in ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','image/jpeg','image/png'];
+      allow delete: if activeStaff()
+        && firestore.get(/databases/(default)/documents/kadro/$(request.auth.uid)).data.rol == 'admin';
+      allow update: if false;
+    }
     match /controlled-documents/{fileName} {
       allow read: if activeStaff()
         && firestore.get(/databases/(default)/documents/kadro/$(request.auth.uid)).data.rol == 'admin';
