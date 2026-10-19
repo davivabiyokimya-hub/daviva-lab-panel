@@ -8,6 +8,24 @@ service firebase.storage {
         && firestore.get(/databases/(default)/documents/kadro/$(request.auth.uid)).data['e-posta'] == request.auth.token.email
         && firestore.get(/databases/(default)/documents/kadro/$(request.auth.uid)).data.rol in ['admin', 'stok'];
     }
+    function bloodBankStaff() {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/kadro/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/kadro/$(request.auth.uid)).data.aktif == true
+        && firestore.get(/databases/(default)/documents/kadro/$(request.auth.uid)).data['e-posta'] == request.auth.token.email
+        && firestore.get(/databases/(default)/documents/kadro/$(request.auth.uid)).data.rol is string;
+    }
+    match /blood-bank-gel-cards/{uid}/{fileName} {
+      allow read: if bloodBankStaff();
+      allow create: if bloodBankStaff()
+        && uid == request.auth.uid
+        && fileName.matches('[A-Za-z0-9_-]+[.](jpg|png|webp)')
+        && request.resource.size > 0
+        && request.resource.size <= 10 * 1024 * 1024
+        && request.resource.contentType in ['image/jpeg','image/png','image/webp']
+        && request.resource.metadata.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
     match /dispatch-notes/{fileName} {
       allow read: if activeStaff();
       allow create: if activeStaff()
