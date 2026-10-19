@@ -6,7 +6,9 @@ const folders=[
 ["Formlar ve Tutanaklar","1dgc448HL_rOnwXAtshlVfACZsYs20X_7"],
 ["Cihaz Belgeleri","1NFcvpHtfl08ncXeQYtuGNF3iQiY6PV2N"],
 ["Kalibrasyon ve Bakım","12EIYZVqgD62EyylL2ExQ_1WM7TGZ4zXy"],
-["Stok ve Satın Alma","1-Oopp5Nf-DeDcJ5E6eqDdwoCt_LlCaa0"]
+["Stok ve Satın Alma","1-Oopp5Nf-DeDcJ5E6eqDdwoCt_LlCaa0"],
+["Cihaz İnsertleri ve IFU (Yeni)","1i2w21_vhQ0eZTcO4jaizYYvdr0joqnxb"],
+["İrsaliyeler (Yeni)","1SUQjLBm3d0iTEzk8zBpQ_1x5lz6XhkQM"]
 ];
 if(nav&&main){
 const btn=document.createElement("button");btn.type="button";btn.dataset.page="driveDocuments";btn.textContent="📁 Google Drive Belgeleri";btn.className="hidden";nav.append(btn);
