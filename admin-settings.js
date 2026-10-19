@@ -12,7 +12,13 @@ const entries=[
 ["Raf ve konumlar","Depo ve dolap konumlarını yönet","products","productLocationSelect"],
 ["İşlem açıklamaları","Giriş ve çıkış açıklamalarını yönet","movements","operationNote"],
 ["Personel Ad Soyad","Personel adını, rolünü ve aktiflik durumunu düzenle","staff","staffFullName"],
-["Nöbet ve vardiya","Personel nöbet kayıtlarını yönet","dutyRoster","dutyPerson"]
+["Nöbet ve vardiya","Personel nöbet kayıtlarını yönet","dutyRoster","dutyPerson"],
+["Sistem başlıkları ve metinler","Kurumsal başlıkları ve menü adlarını düzenle","systemSettings",null],
+["Görünüm ve tablo yazıları","Etiket, sütun ve düğme metinlerini düzenle","adminSettings","vtSearch"],
+["Yeni içerik ve ekran","Kod yazmadan bilgilendirme ekranları oluştur","featureBuilder",null],
+["Tedarikçi kayıtları","Tedarikçi bilgilerini güncelle","suppliers",null],
+["Stok sayımları","Sayım kayıtlarını görüntüle ve yönet","counts",null],
+["Personel işlem geçmişi","Denetim kayıtlarını incele ve dışa aktar","staffActivity",null]
 ];
 for(const [title,description,target,field] of entries){
 const card=document.createElement("div");card.className="panel";card.style.cssText="margin:0;padding:16px;min-width:220px";
