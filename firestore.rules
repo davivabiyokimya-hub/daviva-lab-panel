@@ -459,7 +459,7 @@ service cloud.firestore {
         && exists(staffPath())
         && get(staffPath()).data.aktif == true
         && get(staffPath()).data['e-posta'] == request.auth.token.email
-        && get(staffPath()).data.rol in ['admin', 'kanbankasi', 'kan_bankasi'];
+        && get(staffPath()).data.rol is string;
     }
     match /bloodBankKizilayInvoices/{invoiceId} {
       allow read: if bloodBankStaff();
@@ -478,13 +478,15 @@ service cloud.firestore {
     }
     match /bloodBankGelCards/{cardId} {
       allow read: if bloodBankStaff();
-      allow create: if admin()
-        && request.resource.data.keys().hasOnly(['driveFileId','fileName','resultType','date','email','uid','createdAt'])
-        && request.resource.data.keys().hasAll(['driveFileId','fileName','resultType','date','email','uid','createdAt'])
-        && request.resource.data.driveFileId is string && request.resource.data.driveFileId.size() > 0
-        && request.resource.data.fileName is string && request.resource.data.fileName.size() > 0
+      allow create: if bloodBankStaff()
+        && request.resource.data.keys().hasOnly(['storagePath','fileName','resultType','date','email','uid','createdAt'])
+        && request.resource.data.keys().hasAll(['storagePath','fileName','resultType','date','email','uid','createdAt'])
+        && request.resource.data.storagePath is string
+        && request.resource.data.storagePath.matches('blood-bank-gel-cards/' + request.auth.uid + '/[A-Za-z0-9_-]+[.](jpg|png|webp)')
+        && request.resource.data.fileName is string && request.resource.data.fileName.size() > 0 && request.resource.data.fileName.size() <= 255
         && request.resource.data.resultType in ['group','cross']
         && request.resource.data.date is string
+        && request.resource.data.date.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.createdAt == request.time;
