@@ -30,6 +30,43 @@ link.click();const input=field?document.getElementById(field):null;if(input){inp
 };
 card.append(heading,desc,go);page.querySelector("#settingsLinks").append(card)
 }
+
+/* DAVIVA ADMIN: salt okunur kimlik ve yetki teşhisi. Rol atamaz. */
+{
+ const host=page.querySelector(".panel");
+ const diag=document.createElement("div");diag.className="panel";diag.style.cssText="margin-top:16px;padding:16px";
+ const title=document.createElement("h3");title.textContent="🔐 Firebase Hesap ve Yetki Kontrolü";
+ const info=document.createElement("p");info.className="muted";info.textContent="Kimlik doğrulaması, personel kaydı ve yönetici rolü kontrol edilir. Bu ekran yetki vermez.";
+ const status=document.createElement("pre");status.style.cssText="white-space:pre-wrap;overflow-wrap:anywhere;background:#f2f6fa;padding:12px;border-radius:8px";
+ const check=document.createElement("button");check.type="button";check.className="btn alt";check.textContent="Yetkimi Doğrula";
+ const expectedUid="DtNgBT9yzeXueF58xYiIaSvrwD3",expectedEmail="berkant.7324@gmail.com";
+ async function verify(){
+  const current=auth.currentUser;
+  if(!current){status.textContent="Oturum açık değil.";return}
+  status.textContent="Firebase kayıtları kontrol ediliyor…";
+  try{
+   await current.getIdToken(true);
+   const snapshot=await getDoc(doc(db,"kadro",current.uid));
+   const staff=snapshot.data();
+   const lines=[
+    "Oturum UID: "+current.uid,
+    "Oturum e-postası: "+(current.email||"(yok)"),
+    "Hedef UID eşleşmesi: "+(current.uid===expectedUid?"EVET":"HAYIR"),
+    "Hedef e-posta eşleşmesi: "+(current.email===expectedEmail?"EVET":"HAYIR"),
+    "Kadro kaydı: "+(snapshot.exists()?"VAR":"YOK"),
+    "Kayıt e-posta eşleşmesi: "+(staff?.["e-posta"]===current.email?"EVET":"HAYIR"),
+    "Kayıt aktif: "+(staff?.aktif===true?"EVET":"HAYIR"),
+    "Kayıt yönetici rolü: "+(staff?.rol==="admin"?"EVET":"HAYIR")
+   ];
+   const verified=current.uid===expectedUid&&current.email===expectedEmail&&snapshot.exists()&&staff?.["e-posta"]===current.email&&staff?.aktif===true&&staff?.rol==="admin";
+   lines.push("SONUÇ: "+(verified?"Yönetici kimliği ve kadro eşleşmesi doğrulandı.":"Yönetici doğrulaması tamamlanamadı."));
+   status.textContent=lines.join("\n");
+  }catch(e){status.textContent="Doğrulama başarısız. Firestore erişimi veya oturum yetkilerini kontrol edin. ("+(e.code||"hata")+")"}
+ }
+ check.addEventListener("click",verify);
+ diag.append(title,info,check,status);host.append(diag);
+}
+
 button.onclick=()=>{document.querySelectorAll("main .page").forEach(x=>x.classList.toggle("hidden",x!==page));document.querySelectorAll("[data-page]").forEach(x=>x.classList.toggle("active",x===button));const heading=document.getElementById("heading");if(heading)heading.textContent="Yönetim Merkezi"};
 let epoch=0;onAuthStateChanged(auth,async user=>{const n=++epoch;button.classList.add("hidden");page.classList.add("hidden");if(!user)return;try{const snap=await getDoc(doc(db,"kadro",user.uid));if(n!==epoch)return;const d=snap.data();if(d?.aktif===true&&d.rol==="admin"&&d["e-posta"]===user.email)button.classList.remove("hidden")}catch(e){console.warn("Yönetim Merkezi yetkisi:",e)}})
 }
