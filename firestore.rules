@@ -41,7 +41,7 @@ service cloud.firestore {
         && d['e-posta'].size() <= 254 && d.get('adSoyad','') is string && d.get('adSoyad','').size() <= 120 && d.get('unvan','') is string && d.get('unvan','').size() <= 80 && d.rol in ['admin','stok'];
     }
     function canAccess(feature) {
-      return admin() || (activeStaff() && (!exists(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)) || get(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)).data.get(feature, false) == true));
+      return admin() || (activeStaff() && (!exists(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)) || get(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)).data.get(feature, feature in ['lotTransfers','dispatchArchive','msdsDocuments']) == true));
     }
     function bloodAccess() { return admin() || (activeStaff() && exists(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)) && get(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)).data.get('bloodBank', false) == true); }
     match /sessionAudit/{id} {
