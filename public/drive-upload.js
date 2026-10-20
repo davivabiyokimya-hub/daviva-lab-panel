@@ -6,12 +6,29 @@ export const DRIVE_KIZILAY_FOLDER="1AjmXiUai824_deb_Rtvos3Y4k6tjikyP";
 export const DRIVE_BLOODBANK_FOLDER="16bHx-KP_EY-kD-4hVXtVa1eBiIgSj9tp";
 export const DRIVE_CLIMATE_FOLDER="1UznQ83WvY2lJrWT8Na5iWei1OHOGvc-B";
 export const DRIVE_DISPATCH_FOLDER="1SUQjLBm3d0iTEzk8zBpQ_1x5lz6XhkQM";
-let token=null,expires=0;
+let token=null,expires=0,msdsFolderId=null;
 async function gis(){if(window.google?.accounts?.oauth2)return;await new Promise((ok,bad)=>{const s=document.createElement("script");s.src="https://accounts.google.com/gsi/client";s.onload=ok;s.onerror=()=>bad(Error("Google OAuth yüklenemedi"));document.head.append(s)})}
 async function verifiedAdmin(){const u=getAuth().currentUser;if(!u)throw Error("Önce yönetici girişi yapın.");const s=await getDoc(doc(getFirestore(),"kadro",u.uid));const d=s.data();if(d?.aktif!==true||d.rol!=="admin"||d["e-posta"]!==u.email)throw Error("Yalnızca yönetici dosya yükleyebilir.");return u}
 gis().catch(()=>{});
 export async function connectDriveAdmin(){if(!getAuth().currentUser)throw Error("Önce giriş yapın.");if(!window.google?.accounts?.oauth2)throw Error("Google giriş kitaplığı henüz hazır değil. Birkaç saniye sonra tekrar deneyin.");const response=await new Promise((resolve,reject)=>{const client=google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:"https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.email",callback:r=>r.error?reject(Error(r.error)):resolve(r)});client.requestAccessToken({prompt:"select_account"})});const check=await fetch("https://www.googleapis.com/oauth2/v3/userinfo",{headers:{Authorization:"Bearer "+response.access_token}});if(!check.ok)throw Error("Google hesabı doğrulanamadı.");const info=await check.json();if(String(info.email||"").toLowerCase()!=="davivabiyokimya@gmail.com"){google.accounts.oauth2.revoke(response.access_token,()=>{});throw Error("Dosya yüklemek için davivabiyokimya@gmail.com hesabını seçin.")}await verifiedAdmin();token=response.access_token;expires=Date.now()+Number(response.expires_in||3000)*1000;return token}
 async function access(){await verifiedAdmin();if(token&&Date.now()<expires-60000)return token;throw Error("Google Drive bağlı değil. Önce Google Drive Bağla butonuna tıklayıp izin verin.")}
-export async function uploadDriveFile(file,folder){if(![DRIVE_INSERT_FOLDER,DRIVE_DISPATCH_FOLDER,DRIVE_CLIMATE_FOLDER,DRIVE_BLOODBANK_FOLDER,DRIVE_KIZILAY_FOLDER].includes(folder))throw Error("Geçersiz Drive klasörü");const key=await access();const mime=file.type||"application/octet-stream",boundary="daviva"+Date.now();const enc=new TextEncoder();const meta=JSON.stringify({name:file.name,parents:[folder]});const header=enc.encode("--"+boundary+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+meta+"\r\n--"+boundary+"\r\nContent-Type: "+mime+"\r\n\r\n");const tail=enc.encode("\r\n--"+boundary+"--");const bytes=new Uint8Array(header.length+file.size+tail.length);bytes.set(header);bytes.set(new Uint8Array(await file.arrayBuffer()),header.length);bytes.set(tail,header.length+file.size);const res=await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink",{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"multipart/related; boundary="+boundary},body:bytes});if(!res.ok){const detail=await res.text();throw Error("Google Drive yükleme hatası "+res.status+": "+detail.slice(0,240))}return res.json()}
+export async function uploadDriveFile(file,folder){if(![DRIVE_INSERT_FOLDER,DRIVE_DISPATCH_FOLDER,DRIVE_CLIMATE_FOLDER,DRIVE_BLOODBANK_FOLDER,DRIVE_KIZILAY_FOLDER].includes(folder)&&folder!==msdsFolderId)throw Error("Geçersiz Drive klasörü");const key=await access();const mime=file.type||"application/octet-stream",boundary="daviva"+Date.now();const enc=new TextEncoder();const meta=JSON.stringify({name:file.name,parents:[folder]});const header=enc.encode("--"+boundary+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+meta+"\r\n--"+boundary+"\r\nContent-Type: "+mime+"\r\n\r\n");const tail=enc.encode("\r\n--"+boundary+"--");const bytes=new Uint8Array(header.length+file.size+tail.length);bytes.set(header);bytes.set(new Uint8Array(await file.arrayBuffer()),header.length);bytes.set(tail,header.length+file.size);const res=await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink",{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"multipart/related; boundary="+boundary},body:bytes});if(!res.ok){const detail=await res.text();throw Error("Google Drive yükleme hatası "+res.status+": "+detail.slice(0,240))}return res.json()}
 export async function removeDriveFile(id){if(!id)throw Error("Drive dosya kimliği yok");const key=await access();const res=await fetch("https://www.googleapis.com/drive/v3/files/"+encodeURIComponent(id),{method:"DELETE",headers:{Authorization:"Bearer "+key}});if(!res.ok&&res.status!==404)throw Error("Drive silme hatası "+res.status)}
 export function driveFileUrl(id){return "https://drive.google.com/file/d/"+encodeURIComponent(id)+"/view"}
+
+export async function uploadMsdsDrive(file){
+  const key=await access();
+  if(!msdsFolderId){
+    const q="name = 'DAVIVA_MSDS_GBF' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+    const found=await fetch("https://www.googleapis.com/drive/v3/files?q="+encodeURIComponent(q)+"&fields=files(id,name)&pageSize=20",{headers:{Authorization:"Bearer "+key}});
+    if(!found.ok)throw Error("MSDS klasörü aranamadı: "+found.status);
+    const list=await found.json();
+    msdsFolderId=list.files?.[0]?.id||null;
+    if(!msdsFolderId){
+      const made=await fetch("https://www.googleapis.com/drive/v3/files?fields=id",{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({name:"DAVIVA_MSDS_GBF",mimeType:"application/vnd.google-apps.folder"})});
+      if(!made.ok)throw Error("MSDS klasörü oluşturulamadı: "+made.status);
+      msdsFolderId=(await made.json()).id;
+    }
+  }
+  return uploadDriveFile(file,msdsFolderId);
+}
