@@ -217,8 +217,8 @@ service cloud.firestore {
       allow update, delete: if false;
     }
     match /lotTransfers/{id} {
-      allow read: if canAccess('inventory');
-      allow create: if canAccess('inventory')
+      allow read: if canAccess('inventory') && canAccess('lotTransfers');
+      allow create: if canAccess('inventory') && canAccess('lotTransfers')
         && request.resource.data.keys().hasOnly(['productId','lot','quantity','note','uid','email','createdAt'])
         && request.resource.data.keys().hasAll(['productId','lot','quantity','note','uid','email','createdAt'])
         && request.resource.data.productId is string
