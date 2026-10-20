@@ -1,0 +1,42 @@
+/* DAVIVA LAB Premium 2026 - isolated presentation layer; no form IDs or business logic changed */
+:root{--premium:#6738ee;--premium-2:#905aff;--premium-ink:#1e2351}
+html[data-daviva-theme="purple"] body{background:radial-gradient(ellipse at 65% 0%,#e6e0ff 0,#f5f5ff 42%,#f6f8ff 100%);color:var(--premium-ink)}
+html[data-daviva-theme="purple"] .layout{grid-template-columns:235px minmax(0,1fr)}
+html[data-daviva-theme="purple"] aside{background:linear-gradient(165deg,#141944 0%,#262064 57%,#5335bb 100%);box-shadow:9px 0 30px #30226315;position:relative}
+html[data-daviva-theme="purple"] aside:after{content:"DAVIVA LAB  •  Tıbbi Biyokimya";display:block;margin:40px 8px 0;padding:22px 8px;border-top:1px solid #ffffff2a;font-size:11px;letter-spacing:1px;color:#e3dbff}
+html[data-daviva-theme="purple"] aside h1{font-size:23px;letter-spacing:.6px}
+html[data-daviva-theme="purple"] aside .sub{color:#d4ceff}
+html[data-daviva-theme="purple"] nav button{border-radius:12px;padding:12px 13px;font-size:13px;transition:background .18s,transform .18s}
+html[data-daviva-theme="purple"] nav button:hover{transform:translateX(3px)}
+html[data-daviva-theme="purple"] nav button.active{background:linear-gradient(110deg,#5d44e9,#8a56fb);box-shadow:0 6px 17px #120e462c}
+html[data-daviva-theme="purple"] main{max-width:none;padding:24px 30px}
+html[data-daviva-theme="purple"] .top{padding:14px 18px;border:1px solid #e8e3fa;border-radius:20px;background:#ffffffdc;box-shadow:0 7px 24px #33205a0b}
+html[data-daviva-theme="purple"] .top h2{color:#242154;font-size:25px}
+html[data-daviva-theme="purple"] .cards{gap:13px;margin:20px 0}
+html[data-daviva-theme="purple"] .card{position:relative;overflow:hidden;min-height:126px;padding:18px;border:1px solid #e9e5ff;border-radius:18px;background:linear-gradient(130deg,#fff 60%,#f0eaff 100%);box-shadow:0 8px 24px #40328210}
+html[data-daviva-theme="purple"] .card:nth-child(2){background:linear-gradient(130deg,#fff 60%,#ffe5ef 100%)}
+html[data-daviva-theme="purple"] .card:nth-child(3){background:linear-gradient(130deg,#fff 60%,#fff2d5 100%)}
+html[data-daviva-theme="purple"] .card:nth-child(4){background:linear-gradient(130deg,#fff 60%,#e3edff 100%)}
+html[data-daviva-theme="purple"] .card:after{content:"◈";position:absolute;right:14px;top:15px;display:grid;place-items:center;width:52px;height:52px;border-radius:18px;background:#ded2ff99;color:#7142f4;font-size:29px}
+html[data-daviva-theme="purple"] .card:nth-child(2):after{content:"!";background:#ffd5e3;color:#e74668}
+html[data-daviva-theme="purple"] .card:nth-child(3):after{content:"◷";background:#ffedbc;color:#d89000}
+html[data-daviva-theme="purple"] .card:nth-child(4):after{content:"▥";background:#dceaff;color:#3678d9}
+html[data-daviva-theme="purple"] .card .metric{color:#222152;font-size:33px;letter-spacing:-1px}
+html[data-daviva-theme="purple"] .panel{border:1px solid #e7e3f6;border-radius:19px;box-shadow:0 8px 25px #3b2c8d0b;background:#fff}
+html[data-daviva-theme="purple"] .panel h3{color:#27245b;font-size:17px}
+html[data-daviva-theme="purple"] .btn:not(.alt):not(.warn){background:linear-gradient(115deg,#6637e9,#8c4dff);box-shadow:0 4px 12px #6637e92b}
+html[data-daviva-theme="purple"] .btn.alt{background:#f9f7ff;color:#5738a7;border-color:#e0d6ff}
+html[data-daviva-theme="purple"] input.search,html[data-daviva-theme="purple"] .field input,html[data-daviva-theme="purple"] .field select,html[data-daviva-theme="purple"] .field textarea{border-color:#dedbf0;border-radius:12px}
+html[data-daviva-theme="purple"] th{background:#f4f3fd;color:#555a7d}
+html[data-daviva-theme="purple"] td{border-bottom-color:#eeecf8}
+html[data-daviva-theme="purple"] tbody tr:hover td{background:#f8f5ff}
+html[data-daviva-theme="purple"] .pill{background:#ece7ff;color:#6337c3}
+html[data-daviva-theme="purple"] .pill.good{background:#dcf8e8;color:#19764a}
+html[data-daviva-theme="purple"] .pill.danger{background:#ffe3e8;color:#c53452}
+html[data-daviva-theme="purple"] #status{border-radius:14px;background:#eeeaff;color:#4f369a}
+html[data-daviva-theme="purple"] .daviva-personnel-chip{padding:4px 8px 4px 4px;border-radius:14px;background:#f7f4ff}
+html[data-daviva-theme="purple"] .daviva-personnel-name{color:#2e265b}
+html[data-daviva-theme="purple"] .daviva-theme-toggle{background:#f2eeff;color:#5e38bc}
+@media(max-width:1000px){html[data-daviva-theme="purple"] .layout{grid-template-columns:210px minmax(0,1fr)}html[data-daviva-theme="purple"] main{padding:18px}}
+@media(max-width:750px){html[data-daviva-theme="purple"] .layout{grid-template-columns:1fr}html[data-daviva-theme="purple"] main{padding:12px}html[data-daviva-theme="purple"] aside:after{display:none}html[data-daviva-theme="purple"] .top{padding:12px}html[data-daviva-theme="purple"] .cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){html[data-daviva-theme="purple"] nav button{transition:none}}
