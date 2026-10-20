@@ -552,8 +552,8 @@ service cloud.firestore {
       allow update, delete: if false;
     }
     match /msdsDocuments/{id} {
-      allow read: if activeStaff();
-      allow create: if activeStaff()
+      allow read: if canAccess('msdsDocuments');
+      allow create: if canAccess('msdsDocuments')
         && request.resource.data.keys().hasOnly(['name','manufacturer','revision','deviceId','deviceName','storagePath','driveFileId','driveFileUrl','storageProvider','fileName','uid','email','createdAt'])
         && request.resource.data.keys().hasAll(['name','manufacturer','revision','deviceId','deviceName','fileName','uid','email','createdAt'])
         && request.resource.data.deviceId is string && request.resource.data.deviceId.size() > 0 && request.resource.data.deviceId.size() <= 150
