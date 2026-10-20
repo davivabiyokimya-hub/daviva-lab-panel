@@ -554,8 +554,10 @@ service cloud.firestore {
     match /msdsDocuments/{id} {
       allow read: if activeStaff();
       allow create: if activeStaff()
-        && request.resource.data.keys().hasOnly(['name','manufacturer','revision','storagePath','driveFileId','driveFileUrl','storageProvider','fileName','uid','email','createdAt'])
-        && request.resource.data.keys().hasAll(['name','manufacturer','revision','fileName','uid','email','createdAt'])
+        && request.resource.data.keys().hasOnly(['name','manufacturer','revision','deviceId','deviceName','storagePath','driveFileId','driveFileUrl','storageProvider','fileName','uid','email','createdAt'])
+        && request.resource.data.keys().hasAll(['name','manufacturer','revision','deviceId','deviceName','fileName','uid','email','createdAt'])
+        && request.resource.data.deviceId is string && request.resource.data.deviceId.size() > 0 && request.resource.data.deviceId.size() <= 150
+        && request.resource.data.deviceName is string && request.resource.data.deviceName.size() > 0 && request.resource.data.deviceName.size() <= 160
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 160
         && request.resource.data.manufacturer is string && request.resource.data.manufacturer.size() > 0 && request.resource.data.manufacturer.size() <= 120
         && request.resource.data.revision is string && request.resource.data.revision.size() <= 10
