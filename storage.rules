@@ -54,6 +54,16 @@ service firebase.storage {
         && fileName.matches('[A-Za-z0-9_-]+[.](pdf|docx)');
       allow update, delete: if false;
     }
+    match /msds/{uid}/{fileName} {
+      allow read: if activeStaff();
+      allow create: if activeStaff()
+        && uid == request.auth.uid
+        && fileName.matches('[A-Za-z0-9_-]+[.]pdf')
+        && request.resource.size > 0
+        && request.resource.size <= 20 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
+      allow update, delete: if false;
+    }
     match /{allPaths=**} { allow read, write: if false; }
   }
 }
