@@ -554,13 +554,14 @@ service cloud.firestore {
     match /msdsDocuments/{id} {
       allow read: if activeStaff();
       allow create: if activeStaff()
-        && request.resource.data.keys().hasOnly(['name','manufacturer','revision','storagePath','fileName','uid','email','createdAt'])
-        && request.resource.data.keys().hasAll(['name','manufacturer','revision','storagePath','fileName','uid','email','createdAt'])
+        && request.resource.data.keys().hasOnly(['name','manufacturer','revision','storagePath','driveFileId','driveFileUrl','storageProvider','fileName','uid','email','createdAt'])
+        && request.resource.data.keys().hasAll(['name','manufacturer','revision','fileName','uid','email','createdAt'])
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 160
         && request.resource.data.manufacturer is string && request.resource.data.manufacturer.size() > 0 && request.resource.data.manufacturer.size() <= 120
         && request.resource.data.revision is string && request.resource.data.revision.size() <= 10
-        && request.resource.data.storagePath is string
-        && request.resource.data.storagePath.matches('msds/' + request.auth.uid + '/[A-Za-z0-9_-]+[.]pdf')
+        && request.resource.data.driveFileId is string && request.resource.data.driveFileId.size() > 0 && request.resource.data.driveFileId.size() <= 200
+        && request.resource.data.driveFileUrl is string && request.resource.data.driveFileUrl.size() <= 500
+        && request.resource.data.storageProvider == 'google-drive'
         && request.resource.data.fileName is string && request.resource.data.fileName.size() <= 200
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.email == request.auth.token.email
