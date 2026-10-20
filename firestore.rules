@@ -197,8 +197,8 @@ service cloud.firestore {
       allow delete: if admin();
     }
     match /dispatchArchive/{id} {
-      allow read: if activeStaff();
-      allow create: if activeStaff()
+      allow read: if canAccess('dispatchArchive');
+      allow create: if canAccess('dispatchArchive')
         && request.resource.data.keys().hasAll(['dispatchNo','dispatchDate','supplierId','supplierName','productName','quantity','note','dispatchDriveId','dispatchDriveUrl','storageProvider','uid','email','createdAt'])
         && request.resource.data.keys().hasOnly(['dispatchNo','dispatchDate','supplierId','supplierName','productName','quantity','note','dispatchDriveId','dispatchDriveUrl','storageProvider','uid','email','createdAt'])
         && request.resource.data.dispatchNo is string && request.resource.data.dispatchNo.size() > 0 && request.resource.data.dispatchNo.size() <= 80
