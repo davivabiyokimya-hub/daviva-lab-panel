@@ -188,6 +188,26 @@ service cloud.firestore {
         && request.resource.data.updatedBy == request.auth.uid;
       allow delete: if admin();
     }
+    match /dispatchArchive/{id} {
+      allow read: if activeStaff();
+      allow create: if activeStaff()
+        && request.resource.data.keys().hasAll(['dispatchNo','dispatchDate','supplierId','supplierName','productName','quantity','note','dispatchDriveId','dispatchDriveUrl','storageProvider','uid','email','createdAt'])
+        && request.resource.data.keys().hasOnly(['dispatchNo','dispatchDate','supplierId','supplierName','productName','quantity','note','dispatchDriveId','dispatchDriveUrl','storageProvider','uid','email','createdAt'])
+        && request.resource.data.dispatchNo is string && request.resource.data.dispatchNo.size() > 0 && request.resource.data.dispatchNo.size() <= 80
+        && request.resource.data.dispatchDate is string && request.resource.data.dispatchDate.size() == 10
+        && request.resource.data.supplierId is string && exists(/databases/$(database)/documents/suppliers/$(request.resource.data.supplierId))
+        && request.resource.data.supplierName == get(/databases/$(database)/documents/suppliers/$(request.resource.data.supplierId)).data.name
+        && request.resource.data.productName == 'Arşiv kaydı'
+        && request.resource.data.quantity == 0
+        && request.resource.data.note is string && request.resource.data.note.size() <= 250
+        && request.resource.data.dispatchDriveId is string && request.resource.data.dispatchDriveId.size() > 0 && request.resource.data.dispatchDriveId.size() <= 200
+        && request.resource.data.dispatchDriveUrl is string && request.resource.data.dispatchDriveUrl.size() > 0 && request.resource.data.dispatchDriveUrl.size() <= 500
+        && request.resource.data.storageProvider == 'google-drive'
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
     match /stockMovements/{id} {
       allow read: if canAccess('stockMovements');
       allow create: if canAccess('stockMovements')
