@@ -14,7 +14,7 @@ service cloud.firestore {
     function movementPath(id) { return /databases/$(database)/documents/stockMovements/$(id); }
     function validProduct(d) {
       return d.keys().hasAll(['code','name','unit','minStock','quantity','createdBy','createdAt','updatedBy','updatedAt'])
-        && d.keys().hasOnly(['code','name','barcode','extraBarcodes','lot','lotEntries','boxContent','expiry','unit','minStock','quantity','category','location','note','createdBy','createdAt','updatedBy','updatedAt','lastMovementId'])
+        && d.keys().hasOnly(['code','name','barcode','extraBarcodes','lot','lotEntries','boxContent','expiry','unit','minStock','quantity','category','location','note','createdBy','createdAt','updatedBy','updatedAt','lastMovementId','lastLotTransferId'])
         && d.code is string && d.code.size() > 0 && d.code.size() <= 64
         && d.name is string && d.name.size() > 0 && d.name.size() <= 160
         && d.unit is string && d.unit.size() > 0 && d.unit.size() <= 40
@@ -125,6 +125,12 @@ service cloud.firestore {
         && request.resource.data.updatedBy == request.auth.uid
         && request.resource.data.updatedAt == request.time
         && (
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lotEntries','lastLotTransferId','updatedAt','updatedBy'])
+            && request.resource.data.quantity == resource.data.quantity
+            && request.resource.data.lastLotTransferId is string
+            && getAfter(/databases/$(database)/documents/lotTransfers/$(request.resource.data.lastLotTransferId)).data.productId == id
+            && getAfter(/databases/$(database)/documents/lotTransfers/$(request.resource.data.lastLotTransferId)).data.uid == request.auth.uid)
+          ||
           (admin()
             && request.resource.data.quantity == resource.data.quantity
             && request.resource.data.get('lastMovementId','') == resource.data.get('lastMovementId',''))
@@ -206,6 +212,23 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+    match /lotTransfers/{id} {
+      allow read: if canAccess('inventory');
+      allow create: if canAccess('inventory')
+        && request.resource.data.keys().hasOnly(['productId','lot','quantity','note','uid','email','createdAt'])
+        && request.resource.data.keys().hasAll(['productId','lot','quantity','note','uid','email','createdAt'])
+        && request.resource.data.productId is string
+        && request.resource.data.lot is string && request.resource.data.lot.size() > 0 && request.resource.data.lot.size() <= 128
+        && request.resource.data.quantity is int && request.resource.data.quantity > 0
+        && request.resource.data.note is string && request.resource.data.note.size() <= 250
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.createdAt == request.time
+        && exists(productPath(request.resource.data.productId))
+        && getAfter(productPath(request.resource.data.productId)).data.lastLotTransferId == id
+        && getAfter(productPath(request.resource.data.productId)).data.quantity == get(productPath(request.resource.data.productId)).data.quantity;
       allow update, delete: if false;
     }
     match /stockMovements/{id} {
