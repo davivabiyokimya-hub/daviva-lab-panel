@@ -570,6 +570,26 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time;
       allow update, delete: if false;
     }
+    match /smartOrders/{id} {
+      allow read: if canAccess('inventory');
+      allow create: if canAccess('inventory')
+        && request.resource.data.keys().hasOnly(['productId','productName','unit','quantity','status','createdBy','createdAt'])
+        && request.resource.data.productId is string
+        && request.resource.data.productName is string
+        && request.resource.data.unit is string
+        && request.resource.data.quantity is int
+        && request.resource.data.quantity > 0
+        && request.resource.data.status == 'Taslak'
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      allow update: if admin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','approvedBy','approvedAt'])
+        && resource.data.status == 'Taslak'
+        && request.resource.data.status == 'Onaylandı'
+        && request.resource.data.approvedBy == request.auth.uid
+        && request.resource.data.approvedAt == request.time;
+      allow delete: if false;
+    }
     match /{document=**} { allow read, write: if false; }
   }
 }
