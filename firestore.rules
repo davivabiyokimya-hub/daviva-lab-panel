@@ -36,9 +36,9 @@ service cloud.firestore {
     }
     function validStaff(d) {
       return d.keys().hasAll(['aktif','e-posta','rol'])
-        && d.keys().hasOnly(['aktif','e-posta','rol','adSoyad','unvan','updatedAt','updatedBy'])
+        && d.keys().hasOnly(['aktif','e-posta','rol','adSoyad','unvan','cinsiyet','updatedAt','updatedBy'])
         && d.aktif is bool && d['e-posta'] is string
-        && d['e-posta'].size() <= 254 && d.get('adSoyad','') is string && d.get('adSoyad','').size() <= 120 && d.get('unvan','') is string && d.get('unvan','').size() <= 80 && d.rol in ['admin','stok'];
+        && d['e-posta'].size() <= 254 && d.get('adSoyad','') is string && d.get('adSoyad','').size() <= 120 && d.get('unvan','') is string && d.get('unvan','').size() <= 80 && d.get('cinsiyet','') is string && d.get('cinsiyet','') in ['','kadin','erkek'] && d.rol in ['admin','stok'];
     }
     function canAccess(feature) {
       return admin() || (activeStaff() && (!exists(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)) || get(/databases/$(database)/documents/accessPermissions/$(request.auth.uid)).data.get(feature, feature in ['lotTransfers','dispatchArchive','msdsDocuments']) == true));
