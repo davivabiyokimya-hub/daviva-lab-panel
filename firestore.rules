@@ -67,14 +67,14 @@ service cloud.firestore {
         && request.resource.data.actorEmail == request.auth.token.email
         && request.resource.data.changes is map
         && request.resource.data.changes.size() > 0
-        && request.resource.data.changes.keys().hasOnly(['inventory','stockMovements','stockCounts','suppliers','testLosses','labModules','bloodBank'])
+        && request.resource.data.changes.keys().hasOnly(['inventory','stockMovements','stockCounts','suppliers','testLosses','labModules','bloodBank','lotTransfers','dispatchArchive','msdsDocuments'])
         && request.resource.data.createdAt == request.time;
       allow update, delete: if false;
     }
     match /accessPermissions/{uid} {
       allow get: if admin() || (signedIn() && request.auth.uid == uid);
       allow list: if admin();
-      allow create, update: if admin() && request.resource.data.keys().hasOnly(['inventory','stockMovements','stockCounts','suppliers','testLosses','labModules','bloodBank']) && request.resource.data.keys().hasAll(['inventory','stockMovements','stockCounts','suppliers','testLosses','labModules']) && request.resource.data.inventory is bool && request.resource.data.stockMovements is bool && request.resource.data.stockCounts is bool && request.resource.data.suppliers is bool && request.resource.data.testLosses is bool && request.resource.data.labModules is bool && request.resource.data.get('bloodBank', false) is bool;
+      allow create, update: if admin() && request.resource.data.keys().hasOnly(['inventory','stockMovements','stockCounts','suppliers','testLosses','labModules','bloodBank']) && request.resource.data.keys().hasAll(['inventory','stockMovements','stockCounts','suppliers','testLosses','labModules']) && request.resource.data.inventory is bool && request.resource.data.stockMovements is bool && request.resource.data.stockCounts is bool && request.resource.data.suppliers is bool && request.resource.data.testLosses is bool && request.resource.data.labModules is bool && request.resource.data.get('bloodBank', false) is bool && request.resource.data.get('lotTransfers', true) is bool && request.resource.data.get('dispatchArchive', true) is bool && request.resource.data.get('msdsDocuments', true) is bool;
       allow delete: if admin();
     }
     match /kadro/{uid} {
