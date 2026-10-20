@@ -187,7 +187,7 @@ service cloud.firestore {
       allow read: if canAccess('stockMovements');
       allow create: if canAccess('stockMovements')
         && request.resource.data.keys().hasAll(['productId','productName','type','quantity','before','after','note','email','uid','createdAt'])
-        && request.resource.data.keys().hasOnly(['productId','productName','type','quantity','before','after','note','email','uid','createdAt','supplierId','supplierName','dispatchNo','dispatchDate','dispatchPath','unitCost','totalCost'])
+        && request.resource.data.keys().hasOnly(['productId','productName','type','quantity','before','after','note','email','uid','createdAt','supplierId','supplierName','dispatchNo','dispatchDate','dispatchPath','dispatchDriveId','dispatchDriveUrl','storageProvider','unitCost','totalCost'])
         && request.resource.data.productId is string
         && request.resource.data.productName is string
         && request.resource.data.type in ['IN','OUT','CAL','QC','WASTE','DISPOSAL']
@@ -203,6 +203,13 @@ service cloud.firestore {
         && request.resource.data.get('dispatchNo','') is string
         && request.resource.data.get('dispatchDate','') is string
         && request.resource.data.get('dispatchPath','') is string
+        && request.resource.data.get('dispatchDriveId','') is string
+        && request.resource.data.get('dispatchDriveUrl','') is string
+        && request.resource.data.get('storageProvider','') is string
+        && request.resource.data.get('dispatchDriveId','').size() <= 200
+        && request.resource.data.get('dispatchDriveUrl','').size() <= 500
+        && request.resource.data.get('storageProvider','') in ['', 'google-drive']
+        && (request.resource.data.get('dispatchDriveId','') == '' || (request.resource.data.type == 'IN' && request.resource.data.get('storageProvider','') == 'google-drive' && request.resource.data.get('dispatchDriveUrl','').size() > 0))
         && request.resource.data.get('dispatchNo','').size() <= 80
         && request.resource.data.get('dispatchPath','').size() <= 150
         && (request.resource.data.type != 'IN'
