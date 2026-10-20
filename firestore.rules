@@ -235,7 +235,7 @@ service cloud.firestore {
       allow read: if canAccess('stockMovements');
       allow create: if canAccess('stockMovements')
         && request.resource.data.keys().hasAll(['productId','productName','type','quantity','before','after','lot','note','email','uid','createdAt'])
-        && request.resource.data.keys().hasOnly(['productId','productName','type','quantity','before','after','note','email','uid','createdAt','supplierId','supplierName','dispatchNo','dispatchDate','dispatchPath','dispatchDriveId','dispatchDriveUrl','storageProvider','unitCost','totalCost'])
+        && request.resource.data.keys().hasOnly(['productId','productName','type','quantity','before','after','lot','note','email','uid','createdAt','supplierId','supplierName','dispatchNo','dispatchDate','dispatchPath','dispatchDriveId','dispatchDriveUrl','storageProvider','unitCost','totalCost'])
         && request.resource.data.productId is string
         && request.resource.data.productName is string
         && request.resource.data.get('lot','') is string
