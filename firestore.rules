@@ -14,13 +14,16 @@ service cloud.firestore {
     function movementPath(id) { return /databases/$(database)/documents/stockMovements/$(id); }
     function validProduct(d) {
       return d.keys().hasAll(['code','name','unit','minStock','quantity','createdBy','createdAt','updatedBy','updatedAt'])
-        && d.keys().hasOnly(['code','name','barcode','lot','boxContent','expiry','unit','minStock','quantity','category','location','note','createdBy','createdAt','updatedBy','updatedAt','lastMovementId'])
+        && d.keys().hasOnly(['code','name','barcode','extraBarcodes','lot','boxContent','expiry','unit','minStock','quantity','category','location','note','createdBy','createdAt','updatedBy','updatedAt','lastMovementId'])
         && d.code is string && d.code.size() > 0 && d.code.size() <= 64
         && d.name is string && d.name.size() > 0 && d.name.size() <= 160
         && d.unit is string && d.unit.size() > 0 && d.unit.size() <= 40
         && d.minStock is int && d.minStock >= 0
         && d.quantity is int && d.quantity >= 0
         && d.get('barcode','') is string && d.get('barcode','').size() <= 128
+        && d.get('extraBarcodes',[]) is list
+        && d.get('extraBarcodes',[]).size() <= 30
+        && (d.get('extraBarcodes',[]).size() == 0 || d.get('extraBarcodes',[])[0] is string)
         && d.get('lot','') is string && d.get('lot','').size() <= 128
         && d.get('boxContent','') is string && d.get('boxContent','').size() <= 120
         && d.get('expiry','') is string && d.get('expiry','').size() <= 10
