@@ -508,6 +508,27 @@ service cloud.firestore {
       allow read: if activeStaff();
       allow create, update, delete: if admin();
     }
+    match /climateSensorProfiles/{id} {
+      allow read: if admin();
+      allow create: if admin()
+        && request.resource.data.keys().hasOnly(['deviceId','type','comPort','baud','host','port','protocol','intervalMinutes','model','unitId','enabled','updatedBy','updatedAt','createdBy','createdAt'])
+        && request.resource.data.deviceId is string
+        && request.resource.data.type in ['rs232','ethernet']
+        && request.resource.data.intervalMinutes is int
+        && request.resource.data.intervalMinutes >= 1
+        && request.resource.data.intervalMinutes <= 1440
+        && request.resource.data.enabled == false
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if admin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deviceId','type','comPort','baud','host','port','protocol','intervalMinutes','model','unitId','enabled','updatedBy','updatedAt'])
+        && request.resource.data.enabled == false
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
     match /climateReadings/{id} {
       allow read: if activeStaff();
       allow create: if activeStaff() && request.resource.data.createdBy == request.auth.uid && request.resource.data.createdAt == request.time;
