@@ -15,6 +15,7 @@ function putCells(tbody,rows,cols){tbody.replaceChildren();for(const r of rows){
 function button(label,fn){const b=document.createElement("button");b.type="button";b.className="btn alt";b.textContent=label;b.onclick=fn;return b}
 function selectPage(id){document.querySelectorAll(".page").forEach(x=>x.classList.toggle("hidden",x.id!==id));document.querySelectorAll("[data-page]").forEach(x=>x.classList.toggle("active",x.dataset.page===id));$("heading").textContent=document.querySelector('[data-page="'+id+'"]').textContent.trim()}
 document.querySelectorAll("[data-page]").forEach(b=>b.onclick=()=>selectPage(b.dataset.page));
+$("goToLotTransfer").onclick=()=>{selectPage("operations");$("lotTransferForm").scrollIntoView({behavior:"smooth",block:"start"})};
 function staffName(uid,email){const p=staff.find(x=>x.id===uid||x["e-posta"]===email);return p?.adSoyad||email||"—"}
 let soundEnabled=false,lastCriticalSignature=null;
 const soundControl=document.createElement("button");soundControl.type="button";soundControl.className="btn alt";soundControl.textContent="🔕 Kritik Stok Sesli Uyarı: Kapalı";soundControl.setAttribute("aria-pressed","false");
