@@ -37,6 +37,16 @@ if(root){
 #dashboard .dv-quick button{padding:18px 9px;border:1px solid #dce8f2;border-radius:12px;background:#e9f5ff;color:#12406a;font-weight:700;cursor:pointer}
 #dashboard .dv-quick button:nth-child(2n){background:#e6faf2}#dashboard .dv-quick button:nth-child(3n){background:#fff0f0}#dashboard .dv-quick button:nth-child(4n){background:#f3efff}
 #dashboard .dv-quick button span{display:block;font-size:24px;margin-bottom:7px}
+#dashboard .dv-launcher{margin:13px 0;padding:17px;border:1px solid #dfe8f0;border-radius:14px;background:white}
+#dashboard .dv-launcher h3{margin:0 0 10px;color:#0b2d4f}
+#dashboard .dv-launcher input{width:100%;padding:12px;border:1px solid #b8ccdc;border-radius:9px;margin-bottom:11px}
+#dashboard .dv-launcher-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:9px}
+#dashboard .dv-launcher-item{display:flex;align-items:center;gap:7px;border:1px solid #dbe7f0;border-radius:10px;padding:7px;background:#f8fbfe}
+#dashboard .dv-launcher-item button{cursor:pointer;border:0;background:transparent;color:#124b78}
+#dashboard .dv-launcher-item .dv-open{flex:1;text-align:left;padding:7px 3px;overflow-wrap:anywhere}
+#dashboard .dv-launcher-item .dv-star{font-size:19px;padding:6px}
+#dashboard .dv-launcher-item .dv-star[aria-pressed="true"]{color:#ba7500}
+#dashboard .dv-launcher-hint{font-size:12px;color:#597087;margin:0 0 9px}
 #dashboard .dv-link{float:right;border:1px solid #d7e3ee;background:white;border-radius:7px;color:#174e83;padding:6px 9px;font-size:11px;cursor:pointer}
 #dashboard .dv-empty{color:#6c8092;font-size:13px}
 @media(max-width:1350px){#dashboard .dv-metrics{grid-template-columns:repeat(3,1fr)}#dashboard .dv-panels{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -44,7 +54,7 @@ if(root){
 @media(max-width:450px){#dashboard .dv-metrics{grid-template-columns:1fr}#dashboard .dv-hero{padding:22px}}
 `;document.head.append(style);
  const el=document.createElement("div");el.id="dvModernDashboard";root.prepend(el);
- el.innerHTML='<div class="dv-hero"><h2>DAVIVA LAB’a Hoş Geldiniz 👋</h2><p>Laboratuvar stokları, cihazlar ve kalite süreçleri için merkezi yönetim paneliniz.</p></div><div class="dv-metrics" id="dvMetrics"></div><div class="dv-panels"><div class="dv-panel"><h3>▥ Aylık Stok Hareketleri</h3><div class="dv-legend"><span><i class="dv-swatch"></i>Giriş</span><span><i class="dv-swatch out"></i>Çıkış</span></div><div class="dv-chart" id="dvBarChart"></div></div><div class="dv-panel"><h3>◉ Stok Dağılımı</h3><div class="dv-donutrow"><div class="dv-donut" id="dvDonut"><div class="dv-donut-inner" id="dvDonutText">—</div></div><div id="dvCategories"></div></div></div><div class="dv-panel"><h3>◈ Stok Değeri (TL)</h3><div id="dvValue" class="dv-empty">Ürünlerde birim fiyat alanı doğrulanmadı.</div><div id="dvValueChart"></div></div></div><div class="dv-panel" style="margin:13px 0"><h3>🔔 Günlük Operasyon ve Uyarı Merkezi</h3><p id="dvAlertSummary" class="dv-alert-summary">Uyarılar hazırlanıyor…</p><div id="dvAlerts" class="dv-alerts" aria-live="polite"></div></div><div class="dv-panels"><div class="dv-panel"><h3><button class="dv-link" data-go="critical">Tümünü Gör</button>⚠ Kritik Stoklar</h3><div id="dvCritical"></div></div><div class="dv-panel"><h3><button class="dv-link" data-go="critical">Tümünü Gör</button>▦ SKT Yaklaşan Ürünler</h3><div id="dvExpiry"></div></div><div class="dv-panel"><h3><button class="dv-link" data-go="labModules">Tümünü Gör</button>⚙ Cihaz Bakım Durumu</h3><div id="dvDevices"></div></div></div><div class="dv-panels" style="grid-template-columns:1.2fr 1fr"><div class="dv-panel"><h3><button class="dv-link" data-go="movements">Tümünü Gör</button>◷ Son Stok Hareketleri</h3><div id="dvRecent"></div></div><div class="dv-panel"><h3>ϟ Hızlı İşlemler</h3><div class="dv-quick" id="dvQuick"></div></div></div><p class="muted" id="dvDashboardStatus" role="status">Veriler yükleniyor…</p>';
+ el.innerHTML='<div class="dv-hero"><h2>DAVIVA LAB’a Hoş Geldiniz 👋</h2><p>Laboratuvar stokları, cihazlar ve kalite süreçleri için merkezi yönetim paneliniz.</p></div><div class="dv-launcher"><h3>🔎 Modül Arama ve Favoriler</h3><input id="dvModuleSearch" type="search" autocomplete="off" placeholder="Stok, cihaz, kalite kontrol, nöbet veya başka bir modül ara…" aria-label="Modül ara"><p class="dv-launcher-hint" id="dvLauncherHint">Kullanabildiğiniz modüller listelenir. ☆ ile favorilere ekleyin.</p><div class="dv-launcher-list" id="dvLauncherList"></div></div><div class="dv-metrics" id="dvMetrics"></div><div class="dv-panels"><div class="dv-panel"><h3>▥ Aylık Stok Hareketleri</h3><div class="dv-legend"><span><i class="dv-swatch"></i>Giriş</span><span><i class="dv-swatch out"></i>Çıkış</span></div><div class="dv-chart" id="dvBarChart"></div></div><div class="dv-panel"><h3>◉ Stok Dağılımı</h3><div class="dv-donutrow"><div class="dv-donut" id="dvDonut"><div class="dv-donut-inner" id="dvDonutText">—</div></div><div id="dvCategories"></div></div></div><div class="dv-panel"><h3>◈ Stok Değeri (TL)</h3><div id="dvValue" class="dv-empty">Ürünlerde birim fiyat alanı doğrulanmadı.</div><div id="dvValueChart"></div></div></div><div class="dv-panel" style="margin:13px 0"><h3>🔔 Günlük Operasyon ve Uyarı Merkezi</h3><p id="dvAlertSummary" class="dv-alert-summary">Uyarılar hazırlanıyor…</p><div id="dvAlerts" class="dv-alerts" aria-live="polite"></div></div><div class="dv-panels"><div class="dv-panel"><h3><button class="dv-link" data-go="critical">Tümünü Gör</button>⚠ Kritik Stoklar</h3><div id="dvCritical"></div></div><div class="dv-panel"><h3><button class="dv-link" data-go="critical">Tümünü Gör</button>▦ SKT Yaklaşan Ürünler</h3><div id="dvExpiry"></div></div><div class="dv-panel"><h3><button class="dv-link" data-go="labModules">Tümünü Gör</button>⚙ Cihaz Bakım Durumu</h3><div id="dvDevices"></div></div></div><div class="dv-panels" style="grid-template-columns:1.2fr 1fr"><div class="dv-panel"><h3><button class="dv-link" data-go="movements">Tümünü Gör</button>◷ Son Stok Hareketleri</h3><div id="dvRecent"></div></div><div class="dv-panel"><h3>ϟ Hızlı İşlemler</h3><div class="dv-quick" id="dvQuick"></div></div></div><p class="muted" id="dvDashboardStatus" role="status">Veriler yükleniyor…</p>';
  const $=id=>document.getElementById(id),colors=["#1764d5","#54aaf8","#16c28a","#ffb927","#9262f7","#94a6b8"];
  const safeNum=v=>v!==null&&v!==undefined&&v!==""&&Number.isFinite(Number(v))?Number(v):null;
  const trTable=(heads,rows)=>{const table=document.createElement("table");table.className="dv-table";const thead=table.createTHead(),head=thead.insertRow();heads.forEach(h=>{const c=document.createElement("th");c.textContent=h;head.append(c)});const body=table.createTBody();for(const row of rows){const tr=body.insertRow();row.forEach(v=>{const td=tr.insertCell();td.textContent=String(v??"—")})}return table};
@@ -53,8 +63,31 @@ if(root){
  el.addEventListener("click",e=>{const button=e.target.closest("[data-go]");if(button)navigate(button.dataset.go)});
  const shortcuts=[["📦","Ürün Ekle","products"],["⬇","Stok Girişi","operations"],["⬆","Stok Çıkışı","operations"],["🚚","Tedarikçiler","suppliers"],["▤","İrsaliye","dispatches"],["▥","Stok Sayımı","counts"],["📊","Raporlar","smartCenter"],["✦","DAVIVA AI","davivaAi"]];
  for(const [icon,label,id] of shortcuts){const b=document.createElement("button");b.type="button";b.dataset.go=id;const i=document.createElement("span");i.textContent=icon;b.append(i,document.createTextNode(label));$("dvQuick").append(b)}
+
+ const launcherInput=$("dvModuleSearch"),launcherList=$("dvLauncherList"),launcherHint=$("dvLauncherHint");
+ const favoritesKey="daviva-dashboard-favorites-v1";
+ let favorites=[];
+ try{const saved=JSON.parse(localStorage.getItem(favoritesKey)||"[]");if(Array.isArray(saved))favorites=saved.filter(x=>typeof x==="string").slice(0,60)}catch(_){}
+ const normalize=s=>String(s||"").toLocaleLowerCase("tr-TR").replace(/\\s+/g," ").trim();
+ function availableModules(){return [...document.querySelectorAll("aside nav button[data-page]")].filter(b=>!b.classList.contains("hidden")&&getComputedStyle(b).display!=="none"&&b.dataset.page!=="dashboard").map(b=>({id:b.dataset.page,label:b.textContent.trim().replace(/\\s+/g," ")})).filter(x=>x.id&&x.label)}
+ function drawLauncher(){
+  launcherList.replaceChildren();
+  if(!current){launcherHint.textContent="Modüller için yetkili kullanıcı girişi gereklidir.";return}
+  const q=normalize(launcherInput.value);
+  const list=availableModules().filter(x=>normalize(x.label+" "+x.id).includes(q)).sort((a,b)=>Number(favorites.includes(b.id))-Number(favorites.includes(a.id))||a.label.localeCompare(b.label,"tr"));
+  launcherHint.textContent=list.length+" erişilebilir modül"+(q?" bulundu":" · Yıldız ile favorilere ekleyin");
+  for(const m of list.slice(0,40)){
+   const wrap=document.createElement("div");wrap.className="dv-launcher-item";
+   const open=document.createElement("button");open.type="button";open.className="dv-open";open.textContent=m.label;open.addEventListener("click",()=>navigate(m.id));
+   const star=document.createElement("button");star.type="button";star.className="dv-star";star.textContent=favorites.includes(m.id)?"★":"☆";star.setAttribute("aria-label",m.label+" favori durumunu değiştir");star.setAttribute("aria-pressed",String(favorites.includes(m.id)));
+   star.addEventListener("click",()=>{favorites=favorites.includes(m.id)?favorites.filter(x=>x!==m.id):[...favorites,m.id];try{localStorage.setItem(favoritesKey,JSON.stringify(favorites))}catch(_){}drawLauncher()});
+   wrap.append(open,star);launcherList.append(wrap)
+  }
+ }
+ launcherInput.addEventListener("input",drawLauncher);
+ document.addEventListener("click",e=>{if(e.target.closest('aside nav button[data-page="dashboard"]'))setTimeout(drawLauncher,0)});
  let current=null,seq=0;
- onAuthStateChanged(auth,async u=>{const token=++seq;current=null;if(!u){$("dvDashboardStatus").textContent="Verileri görmek için giriş yapın.";return}try{const snap=await getDoc(doc(db,"kadro",u.uid));const staff=snap.data();if(token!==seq)return;if(!staff?.aktif||staff["e-posta"]!==u.email||!["admin","stok"].includes(staff.rol))return;current=u;await render(token)}catch(_){$("dvDashboardStatus").textContent="Yetki veya veri okuma hatası."}});
+ onAuthStateChanged(auth,async u=>{const token=++seq;current=null;drawLauncher();if(!u){$("dvDashboardStatus").textContent="Verileri görmek için giriş yapın.";return}try{const snap=await getDoc(doc(db,"kadro",u.uid));const staff=snap.data();if(token!==seq)return;if(!staff?.aktif||staff["e-posta"]!==u.email||!["admin","stok"].includes(staff.rol))return;current=u;drawLauncher();await render(token)}catch(_){$("dvDashboardStatus").textContent="Yetki veya veri okuma hatası."}});
  const refresh=document.getElementById("refresh");if(refresh)refresh.addEventListener("click",()=>{if(current)render(seq)});
  async function render(token){try{const [ps,ms]=await Promise.all([getDocs(collection(db,"products")),getDocs(collection(db,"stockMovements"))]);if(token!==seq||!current)return;
  const products=ps.docs.map(d=>({id:d.id,...d.data()})),movements=ms.docs.map(d=>d.data());const now=new Date(),day=86400000;
