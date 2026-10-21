@@ -1,8 +1,8 @@
 {
-  "name": "daviva-lab-desktop",
+  "name": "bilgen-desktop",
   "version": "0.1.0",
   "private": true,
-  "description": "DAVIVA LAB Windows desktop shell",
+  "description": "BİLGEN Akıllı Laboratuvar Yönetim Sistemi — Windows masaüstü uygulaması",
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
@@ -14,8 +14,8 @@
     "electron-builder": "^26.0.0"
   },
   "build": {
-    "appId": "tr.com.daviva.lab.desktop",
-    "productName": "DAVIVA LAB",
+    "appId": "tr.com.bilgen.desktop",
+    "productName": "BİLGEN",
     "directories": {
       "output": "dist"
     },
@@ -29,7 +29,7 @@
         "nsis",
         "portable"
       ],
-      "artifactName": "DAVIVA-LAB-${version}-${arch}.${ext}"
+      "artifactName": "BILGEN-${version}-${arch}.${ext}"
     },
     "nsis": {
       "oneClick": false,
