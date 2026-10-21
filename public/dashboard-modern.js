@@ -66,9 +66,9 @@ if(root){
   const ds=await getDocs(collection(db,"labModules"));deviceReadOk=true;
   if(token!==seq||!current)return;
   const activeStates=new Set(["aktif","faal","çalışıyor","calisiyor","kullanımda","kullaniliyor","kullanılıyor","active","in use"]);
-  const registry=ds.docs.map(d=>d.data()).filter(d=>d.category==="device"&&d.recordType==="registry");
+  const registry=ds.docs.map(d=>({id:d.id,...d.data()})).filter(d=>d.category==="device"&&d.recordType==="registry");
   activeDevices=registry.filter(d=>activeStates.has(String(d.status||"").trim().toLocaleLowerCase("tr-TR").replace(/\s+/g," "))).length;
-  const dayDiff=value=>{if(typeof value!=="string"||!/^\\d{4}-\\d{2}-\\d{2}$/.test(value))return null;const date=new Date(value+"T12:00:00");if(!Number.isFinite(+date))return null;const today=new Date();today.setHours(12,0,0,0);return Math.round((date-today)/86400000)};
+  const dayDiff=value=>{if(typeof value!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(value))return null;const date=new Date(value+"T12:00:00");if(!Number.isFinite(+date))return null;const today=new Date();today.setHours(12,0,0,0);return Math.round((date-today)/86400000)};
   const maintenance=ds.docs.map(d=>({id:d.id,...d.data()})).filter(d=>d.category==="device"&&d.recordType==="maintenance");
   const latest=new Map();
   maintenance.sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
@@ -77,7 +77,7 @@ if(root){
   const plannedDevices=new Set(plans.map(m=>String(maintenance.find(x=>x.device===m.name)?.deviceId||maintenance.find(x=>x.device===m.name)?.assetCode||m.name)));
   for(const d of registry){const key=String(d.id||d.assetCode||d.device||"");const remaining=dayDiff(d.next);if(remaining!==null&&!plannedDevices.has(key))plans.push({name:String(d.device||"Cihaz"),kind:"Envanter bakım planı",days:remaining,source:"registry"})}
   maintenanceAlerts=plans.filter(m=>m.days<=30).sort((a,b)=>a.days-b.days);
-  deviceAttention=registry.filter(d=>/arıza|ariz|bozuk|servis|kullanım dışı|kullanim disi|pasif|bakımda|bakimda/.test(String(d.status||"").toLocaleLowerCase("tr-TR"))).map(d=>({name:String(d.name||d.deviceName||"Cihaz"),status:String(d.status||"Kontrol gerekli")}));
+  deviceAttention=registry.filter(d=>/arıza|ariz|bozuk|servis|kullanım dışı|kullanim disi|pasif|bakımda|bakimda/.test(String(d.status||"").toLocaleLowerCase("tr-TR"))).map(d=>({name:String(d.device||d.name||d.deviceName||"Cihaz"),status:String(d.status||"Kontrol gerekli")}));
  }catch(e){console.warn("Genel bakış aktif cihaz sayısı okunamadı:",e)}
  const alertItems=[];
  const expired=expiry.filter(p=>p.days<0);
