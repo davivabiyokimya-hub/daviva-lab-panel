@@ -85,7 +85,7 @@ catch(e){status("Bildirim izni açılamadı: "+e.message)}
 onAuthStateChanged(auth,async u=>{
 const v=++token;user=null;admin=false;canInventory=false;canDevices=false;initialized=false;previous.clear();
 if(timer){clearInterval(timer);timer=null}
-el("maCounters").replaceChildren();el("maItems").replaceChildren();el("maNotify").checked=false;el("maVoice").checked=false;
+el("maCounters").replaceChildren();el("maItems").replaceChildren();el("maNotify").checked=true;el("maVoice").checked=true;
 if(!u){status("Giriş yapın.");return}
 try{
 const snap=await getDoc(doc(db,"kadro",u.uid));if(v!==token)return;
@@ -94,7 +94,7 @@ if(staff?.aktif!==true||staff["e-posta"]!==u.email||!["admin","stok"].includes(s
 admin=staff.rol==="admin";
 if(admin){canInventory=true;canDevices=true;}
 else{const permissions=await getDoc(doc(db,"accessPermissions",u.uid));if(v!==token)return;canInventory=!permissions.exists()||permissions.data()?.inventory===true;canDevices=!permissions.exists()||permissions.data()?.labModules===true}
-user=u;status("Hazır. Uyarıları kontrol edin.");
+user=u;status("Otomatik uyarı ve sesli bildirim açık. Tarayıcı izni ve ses desteği gereklidir.");
 timer=setInterval(()=>{if(!document.hidden)refresh()},120000);
 refresh();
 }catch(e){status("Yetki kontrolü başarısız: "+e.message)}
