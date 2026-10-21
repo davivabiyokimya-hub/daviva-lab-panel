@@ -37,16 +37,6 @@ if(root){
 #dashboard .dv-quick button{padding:18px 9px;border:1px solid #dce8f2;border-radius:12px;background:#e9f5ff;color:#12406a;font-weight:700;cursor:pointer}
 #dashboard .dv-quick button:nth-child(2n){background:#e6faf2}#dashboard .dv-quick button:nth-child(3n){background:#fff0f0}#dashboard .dv-quick button:nth-child(4n){background:#f3efff}
 #dashboard .dv-quick button span{display:block;font-size:24px;margin-bottom:7px}
-#dashboard .dv-launcher{margin:13px 0;padding:17px;border:1px solid #dfe8f0;border-radius:14px;background:white}
-#dashboard .dv-launcher h3{margin:0 0 10px;color:#0b2d4f}
-#dashboard .dv-launcher input{width:100%;padding:12px;border:1px solid #b8ccdc;border-radius:9px;margin-bottom:11px}
-#dashboard .dv-launcher-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:9px}
-#dashboard .dv-launcher-item{display:flex;align-items:center;gap:7px;border:1px solid #dbe7f0;border-radius:10px;padding:7px;background:#f8fbfe}
-#dashboard .dv-launcher-item button{cursor:pointer;border:0;background:transparent;color:#124b78}
-#dashboard .dv-launcher-item .dv-open{flex:1;text-align:left;padding:7px 3px;overflow-wrap:anywhere}
-#dashboard .dv-launcher-item .dv-star{font-size:19px;padding:6px}
-#dashboard .dv-launcher-item .dv-star[aria-pressed="true"]{color:#ba7500}
-#dashboard .dv-launcher-hint{font-size:12px;color:#597087;margin:0 0 9px}
 #dashboard .dv-link{float:right;border:1px solid #d7e3ee;background:white;border-radius:7px;color:#174e83;padding:6px 9px;font-size:11px;cursor:pointer}
 #dashboard .dv-empty{color:#6c8092;font-size:13px}
 @media(max-width:1350px){#dashboard .dv-metrics{grid-template-columns:repeat(3,1fr)}#dashboard .dv-panels{grid-template-columns:repeat(2,minmax(0,1fr))}}
