@@ -61,8 +61,15 @@ if(root){
  const expiryDays=p=>{if(typeof p.expiry!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(p.expiry))return null;const t=new Date(p.expiry+"T12:00:00");return Number.isNaN(+t)?null:Math.round((t-new Date(now.getFullYear(),now.getMonth(),now.getDate(),12))/day)};
  const critical=products.filter(p=>safeNum(p.quantity)!==null&&safeNum(p.minStock)!==null&&Number(p.quantity)<=Number(p.minStock));
  const expiry=products.map(p=>({...p,days:expiryDays(p)})).filter(p=>p.days!==null&&p.days<=90).sort((a,b)=>a.days-b.days);
+ let activeDevices="—";
+ try{
+  const ds=await getDocs(collection(db,"labModules"));
+  if(token!==seq||!current)return;
+  const activeStates=new Set(["aktif","faal","çalışıyor","calisiyor","kullanımda","kullaniliyor","kullanılıyor","active","in use"]);
+  activeDevices=ds.docs.map(d=>d.data()).filter(d=>d.category==="device"&&d.recordType==="registry"&&activeStates.has(String(d.status||"").trim().toLocaleLowerCase("tr-TR").replace(/\s+/g," "))).length;
+ }catch(e){console.warn("Genel bakış aktif cihaz sayısı okunamadı:",e)}
  const pending=products.filter(p=>p.days>=0&&p.days<=30).length;
- const stats=[["📦","Toplam Ürün",products.length,"dv-blue"],["⚠","Kritik Stok",critical.length,"dv-red"],["🚚","Bekleyen Sipariş","—","dv-green"],["📅","SKT ≤30 Gün",expiry.filter(p=>p.days>=0&&p.days<=30).length,"dv-purple"],["⚙","Aktif Cihaz","—","dv-yellow"]];
+ const stats=[["📦","Toplam Ürün",products.length,"dv-blue"],["⚠","Kritik Stok",critical.length,"dv-red"],["🚚","Bekleyen Sipariş","—","dv-green"],["📅","SKT ≤30 Gün",expiry.filter(p=>p.days>=0&&p.days<=30).length,"dv-purple"],["⚙","Aktif Cihaz",activeDevices,"dv-yellow"]];
  $("dvMetrics").replaceChildren();for(const [icon,label,value,cls] of stats){const box=document.createElement("div");box.className="dv-metric "+cls;const ico=document.createElement("span");ico.className="dv-ico";ico.textContent=icon;const detail=document.createElement("div"),small=document.createElement("small"),strong=document.createElement("strong");small.textContent=label;strong.textContent=String(value);detail.append(small,strong);box.append(ico,detail);$("dvMetrics").append(box)}
  const monthly=[];for(let i=9;i>=0;i--){const dt=new Date(now.getFullYear(),now.getMonth()-i,1);monthly.push({year:dt.getFullYear(),month:dt.getMonth(),name:dt.toLocaleDateString("tr-TR",{month:"short"}),in:0,out:0})}
  for(const m of movements){const dt=m.createdAt?.toDate?.();if(!(dt instanceof Date))continue;const period=monthly.find(x=>x.year===dt.getFullYear()&&x.month===dt.getMonth());const n=safeNum(m.quantity);if(!period||n===null||n<0)continue;if(m.type==="IN")period.in+=n;else if(m.type==="OUT")period.out+=n}
