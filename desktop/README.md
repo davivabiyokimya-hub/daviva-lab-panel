@@ -1,4 +1,4 @@
-# DAVIVA LAB Desktop — Windows EXE hazırlığı
+# BİLGEN — Akıllı Laboratuvar Yönetim Sistemi
 
 Bu klasör mevcut DAVIVA LAB web uygulamasını ayrı bir Electron masaüstü penceresinde açan **ilk paketleme taslağıdır**. Uygulama GitHub Pages adresinden yüklenir; **yerel sunucu gerektirmez**, ancak web uygulamasına ve Firebase/Google servislerine erişmek için **internet gerekir**. Veritabanı, personel yetkileri ve Firestore kuralları değiştirilmez.
 
@@ -19,3 +19,7 @@ Bu klasör mevcut DAVIVA LAB web uygulamasını ayrı bir Electron masaüstü pe
 - **Dağıtım:** EXE henüz derlenmedi veya Windows'ta test edilmedi. Kod imzalama sertifikası yoksa Windows SmartScreen uyarısı görülebilir.
 
 Bu klasör ana web sitesinin giriş ekranını değiştirmez ve GitHub Pages dağıtımına yeni bir uygulama dosyası eklemez.
+
+## GitHub Actions ile EXE oluşturma
+
+GitHub deposunun **Actions** sekmesinde **BİLGEN Windows EXE** iş akışını seçin, **Run workflow** düğmesine basın. Başarılı çalışmadan sonra run sayfasındaki **Artifacts** bölümünden `BILGEN-Windows-EXE` arşivini indirin. GitHub Actions derlemesi Windows ortamında çalışır; gerçek kullanıcı oturumu, Google giriş ve barkod yazdırma testleri ayrıca gereklidir.
