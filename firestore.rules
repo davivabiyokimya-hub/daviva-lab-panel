@@ -590,7 +590,14 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.createdAt == request.time;
-      allow update, delete: if false;
+      allow update: if admin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','manufacturer','revision','editedBy','editedAt'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 160
+        && request.resource.data.manufacturer is string && request.resource.data.manufacturer.size() > 0 && request.resource.data.manufacturer.size() <= 120
+        && request.resource.data.revision is string && request.resource.data.revision.size() <= 10
+        && request.resource.data.editedBy == request.auth.uid
+        && request.resource.data.editedAt == request.time;
+      allow delete: if false;
     }
     match /smartOrders/{id} {
       allow read: if canAccess('inventory');
