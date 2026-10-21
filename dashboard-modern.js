@@ -61,13 +61,22 @@ if(root){
  const expiryDays=p=>{if(typeof p.expiry!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(p.expiry))return null;const t=new Date(p.expiry+"T12:00:00");return Number.isNaN(+t)?null:Math.round((t-new Date(now.getFullYear(),now.getMonth(),now.getDate(),12))/day)};
  const critical=products.filter(p=>safeNum(p.quantity)!==null&&safeNum(p.minStock)!==null&&Number(p.quantity)<=Number(p.minStock));
  const expiry=products.map(p=>({...p,days:expiryDays(p)})).filter(p=>p.days!==null&&p.days<=90).sort((a,b)=>a.days-b.days);
- let activeDevices="—",deviceReadOk=false,deviceAttention=[];
+ let activeDevices="—",deviceReadOk=false,deviceAttention=[],maintenanceAlerts=[];
  try{
   const ds=await getDocs(collection(db,"labModules"));deviceReadOk=true;
   if(token!==seq||!current)return;
   const activeStates=new Set(["aktif","faal","çalışıyor","calisiyor","kullanımda","kullaniliyor","kullanılıyor","active","in use"]);
   const registry=ds.docs.map(d=>d.data()).filter(d=>d.category==="device"&&d.recordType==="registry");
   activeDevices=registry.filter(d=>activeStates.has(String(d.status||"").trim().toLocaleLowerCase("tr-TR").replace(/\s+/g," "))).length;
+  const dayDiff=value=>{if(typeof value!=="string"||!/^\\d{4}-\\d{2}-\\d{2}$/.test(value))return null;const date=new Date(value+"T12:00:00");if(!Number.isFinite(+date))return null;const today=new Date();today.setHours(12,0,0,0);return Math.round((date-today)/86400000)};
+  const maintenance=ds.docs.map(d=>({id:d.id,...d.data()})).filter(d=>d.category==="device"&&d.recordType==="maintenance");
+  const latest=new Map();
+  maintenance.sort((a,b)=>String(b.date||"").localeCompare(String(a.date||""))||(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+  for(const m of maintenance){const key=String(m.deviceId||m.assetCode||m.device||"")+"|"+String(m.kind||"");if(!latest.has(key))latest.set(key,m)}
+  const plans=[...latest.values()].filter(m=>dayDiff(m.next)!==null).map(m=>({name:String(m.device||"Cihaz"),kind:String(m.kind||"Bakım"),days:dayDiff(m.next),source:"maintenance"}));
+  const plannedDevices=new Set(plans.map(m=>String(maintenance.find(x=>x.device===m.name)?.deviceId||maintenance.find(x=>x.device===m.name)?.assetCode||m.name)));
+  for(const d of registry){const key=String(d.id||d.assetCode||d.device||"");const remaining=dayDiff(d.next);if(remaining!==null&&!plannedDevices.has(key))plans.push({name:String(d.device||"Cihaz"),kind:"Envanter bakım planı",days:remaining,source:"registry"})}
+  maintenanceAlerts=plans.filter(m=>m.days<=30).sort((a,b)=>a.days-b.days);
   deviceAttention=registry.filter(d=>/arıza|ariz|bozuk|servis|kullanım dışı|kullanim disi|pasif|bakımda|bakimda/.test(String(d.status||"").toLocaleLowerCase("tr-TR"))).map(d=>({name:String(d.name||d.deviceName||"Cihaz"),status:String(d.status||"Kontrol gerekli")}));
  }catch(e){console.warn("Genel bakış aktif cihaz sayısı okunamadı:",e)}
  const alertItems=[];
@@ -76,6 +85,9 @@ if(root){
  if(critical.length)alertItems.push({level:"high",title:critical.length+" kritik stok",detail:critical.slice(0,3).map(p=>p.name||p.code||"Ürün").join(", ")+(critical.length>3?" ve diğerleri":""),go:"critical"});
  if(expired.length)alertItems.push({level:"high",title:expired.length+" son kullanma tarihi geçmiş ürün",detail:expired.slice(0,3).map(p=>p.name||p.code||"Ürün").join(", "),go:"critical"});
  if(soon.length)alertItems.push({level:"medium",title:soon.length+" ürünün miadı 30 gün içinde",detail:soon.slice(0,3).map(p=>p.name||p.code||"Ürün").join(", "),go:"critical"});
+ const overdueMaintenance=maintenanceAlerts.filter(m=>m.days<0),soonMaintenance=maintenanceAlerts.filter(m=>m.days>=0);
+ if(overdueMaintenance.length)alertItems.push({level:"high",title:overdueMaintenance.length+" geciken cihaz bakım / kalibrasyon planı",detail:overdueMaintenance.slice(0,3).map(m=>m.name+" · "+m.kind+" ("+Math.abs(m.days)+" gün gecikti)").join(", "),go:"deviceCenter"});
+ if(soonMaintenance.length)alertItems.push({level:"medium",title:soonMaintenance.length+" yaklaşan cihaz bakım / kalibrasyon planı",detail:soonMaintenance.slice(0,3).map(m=>m.name+" · "+m.kind+" ("+m.days+" gün)").join(", "),go:"deviceCenter"});
  if(deviceAttention.length)alertItems.push({level:"medium",title:deviceAttention.length+" cihazın durumu kontrol edilmeli",detail:deviceAttention.slice(0,3).map(d=>d.name+" ("+d.status+")").join(", "),go:"labModules"});
  const alertArea=$("dvAlerts");alertArea.replaceChildren();
  const summary=$("dvAlertSummary");
