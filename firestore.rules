@@ -14,7 +14,7 @@ service cloud.firestore {
     function movementPath(id) { return /databases/$(database)/documents/stockMovements/$(id); }
     function validProduct(d) {
       return d.keys().hasAll(['code','name','unit','minStock','quantity','createdBy','createdAt','updatedBy','updatedAt'])
-        && d.keys().hasOnly(['code','name','barcode','extraBarcodes','lot','lotEntries','boxContent','expiry','unit','minStock','quantity','category','location','note','createdBy','createdAt','updatedBy','updatedAt','lastMovementId','lastLotTransferId','archived','archivedAt','archivedBy'])
+        && d.keys().hasOnly(['code','name','barcode','extraBarcodes','lot','lotEntries','boxContent','testsPerVial','expiry','unit','minStock','quantity','category','location','note','createdBy','createdAt','updatedBy','updatedAt','lastMovementId','lastLotTransferId','archived','archivedAt','archivedBy'])
         && d.code is string && d.code.size() > 0 && d.code.size() <= 64
         && d.name is string && d.name.size() > 0 && d.name.size() <= 160
         && d.unit is string && d.unit.size() > 0 && d.unit.size() <= 40
@@ -27,6 +27,7 @@ service cloud.firestore {
         && d.get('lot','') is string && d.get('lot','').size() <= 128
         && d.get('lotEntries',[]) is list && d.get('lotEntries',[]).size() <= 50
         && d.get('boxContent','') is string && d.get('boxContent','').size() <= 120
+        && d.get('testsPerVial',0) is int && d.get('testsPerVial',0) >= 0 && d.get('testsPerVial',0) <= 1000000
         && d.get('expiry','') is string && d.get('expiry','').size() <= 10
         && d.get('category','') is string && d.get('category','').size() <= 80
         && d.get('location','') is string && d.get('location','').size() <= 80
