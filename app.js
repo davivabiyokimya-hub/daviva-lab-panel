@@ -1,10 +1,10 @@
 import {connectDriveAdmin,uploadDriveFile,driveFileUrl,DRIVE_DISPATCH_FOLDER} from "./drive-upload.js?v=20261019-1";
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import {getFirestore,doc,getDoc,collection,getDocs,query,where,orderBy,limit,runTransaction,serverTimestamp,setDoc,deleteDoc} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+import {getFirestore,doc,getDoc,collection,getDocs,query,where,orderBy,limit,startAfter,runTransaction,serverTimestamp,setDoc,deleteDoc} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 import {getStorage,ref as storageRef,uploadBytesResumable,getDownloadURL} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js";
 import {firebaseConfig} from "./daviva-firebase-config.js?v=20261016-2";
-const $=id=>document.getElementById(id),esc=v=>String(v??"");let db,auth,storage,user=null,role="",products=[],movements=[],staff=[],suppliers=[],counts=[],lossRecords=[],archiveDispatches=[],editing=null,supplierEditing=null;
+const $=id=>document.getElementById(id),esc=v=>String(v??"");let movementCursor=null,movementHasMore=false,movementLoading=false;let db,auth,storage,user=null,role="",products=[],movements=[],staff=[],suppliers=[],counts=[],lossRecords=[],archiveDispatches=[],editing=null,supplierEditing=null;
 const app=initializeApp(firebaseConfig);auth=getAuth(app);db=getFirestore(app);storage=getStorage(app);
 function message(s,error=false){$("status").textContent=s;$("status").classList.toggle("error",error)}
 function num(v){return Number.isFinite(Number(v))?Number(v):0}
@@ -63,7 +63,7 @@ $("extraBarcodeInput").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();$("a
 function resetProduct(){lotEntries=[];drawLotEntries();$("lotEntryInput").value="";$("lotExpiryInput").value="";extraBarcodes=[];drawExtraBarcodes();$("extraBarcodeInput").value="";editing=null;$("productForm").reset();$("productFormTitle").textContent="Yeni Ürün Kartı";$("saveProduct").textContent="Ürünü Kaydet"}
 $("resetProduct").onclick=resetProduct;
 function editProduct(p){$("productCategoryDialog").close();editing=p.id;lotEntries=Array.isArray(p.lotEntries)?p.lotEntries.map(x=>({lot:String(x.lot||""),expiry:String(x.expiry||""),quantity:num(x.quantity)})).filter(x=>x.lot):p.lot?[{lot:p.lot,expiry:p.expiry||"",quantity:0}]:[];drawLotEntries();extraBarcodes=Array.isArray(p.extraBarcodes)?[...p.extraBarcodes]:[];drawExtraBarcodes();const f=$("productForm");for(const k of ["code","name","barcode","boxContent","testsPerVial","unit","minStock","category","location","note"]){f.elements.namedItem(k).value=esc(p[k]??(k==="minStock"?0:""))}$("productFormTitle").textContent="Ürün Kartını Düzenle";$("saveProduct").textContent="Değişiklikleri Kaydet";selectPage("products");f.scrollIntoView({behavior:"smooth",block:"start"})}
-async function load(){if(!user)return;try{const ps=await getDocs(collection(db,"products"));products=ps.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>esc(a.name).localeCompare(esc(b.name),"tr"));try{const ms=await getDocs(query(collection(db,"stockMovements"),orderBy("createdAt","desc"),limit(250)));movements=ms.docs.map(d=>({id:d.id,...d.data()}))}catch(e){movements=[];console.warn("Hareket geçmişi",e)}if(role==="admin"){try{const ss=await getDocs(collection(db,"kadro"));staff=ss.docs.map(d=>({id:d.id,...d.data()}))}catch(e){staff=[];console.warn("Personel listesi",e)}}try{const ss=await getDocs(collection(db,"suppliers"));suppliers=ss.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>esc(a.name).localeCompare(esc(b.name),"tr"))}catch(e){suppliers=[];console.warn("Tedarikçiler",e)}try{const cs=await getDocs(query(collection(db,"stockCounts"),orderBy("createdAt","desc"),limit(250)));counts=cs.docs.map(d=>({id:d.id,...d.data()}))}catch(e){counts=[];console.warn("Sayım geçmişi",e)}try{const ls=await getDocs(collection(db,"testLosses"));lossRecords=ls.docs.map(d=>({id:d.id,...d.data()}))}catch(e){lossRecords=[];console.warn("Maliyet kayıtları",e);message("Maliyet kayıtları alınamadı: "+e.message,true)}try{const ad=await getDocs(collection(db,"dispatchArchive"));archiveDispatches=ad.docs.map(d=>({id:d.id,...d.data()}))}catch(e){archiveDispatches=[];console.warn("İrsaliye arşivi",e)}render();message("Bağlantı başarılı. "+products.length+" ürün yüklendi.")}catch(e){message("Veriler alınamadı: "+e.message,true)}}
+async function load(){if(!user)return;try{const ps=await getDocs(collection(db,"products"));products=ps.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>esc(a.name).localeCompare(esc(b.name),"tr"));try{const ms=await getDocs(query(collection(db,"stockMovements"),orderBy("createdAt","desc"),limit(250)));movements=ms.docs.map(d=>({id:d.id,...d.data()}));movementCursor=ms.docs[ms.docs.length-1]||null;movementHasMore=ms.docs.length===250}catch(e){movements=[];console.warn("Hareket geçmişi",e)}if(role==="admin"){try{const ss=await getDocs(collection(db,"kadro"));staff=ss.docs.map(d=>({id:d.id,...d.data()}))}catch(e){staff=[];console.warn("Personel listesi",e)}}try{const ss=await getDocs(collection(db,"suppliers"));suppliers=ss.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>esc(a.name).localeCompare(esc(b.name),"tr"))}catch(e){suppliers=[];console.warn("Tedarikçiler",e)}try{const cs=await getDocs(query(collection(db,"stockCounts"),orderBy("createdAt","desc"),limit(250)));counts=cs.docs.map(d=>({id:d.id,...d.data()}))}catch(e){counts=[];console.warn("Sayım geçmişi",e)}try{const ls=await getDocs(collection(db,"testLosses"));lossRecords=ls.docs.map(d=>({id:d.id,...d.data()}))}catch(e){lossRecords=[];console.warn("Maliyet kayıtları",e);message("Maliyet kayıtları alınamadı: "+e.message,true)}try{const ad=await getDocs(collection(db,"dispatchArchive"));archiveDispatches=ad.docs.map(d=>({id:d.id,...d.data()}))}catch(e){archiveDispatches=[];console.warn("İrsaliye arşivi",e)}render();message("Bağlantı başarılı. "+products.length+" ürün yüklendi.")}catch(e){message("Veriler alınamadı: "+e.message,true)}}
 $("refresh").onclick=load;
 $("login").onclick=async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider())}catch(e){message("Giriş hatası: "+e.message,true)}};
 $("logout").onclick=()=>signOut(auth);
@@ -91,13 +91,26 @@ function filteredMovements(){
    if(search){const product=products.find(p=>p.id===m.productId);const hay=[m.productName,product?.code,product?.barcode,m.note,m.supplierName,m.dispatchNo,staffName(m.uid,m.email)].join(" ").toLocaleLowerCase("tr");if(!hay.includes(search))return false}
    return true;
  });
- const summary=$("movementFilterSummary");if(summary)summary.textContent=rows.length+" / "+movements.length+" hareket gösteriliyor (son 250 kayıt)";
+ const summary=$("movementFilterSummary");if(summary)summary.textContent=rows.length+" / "+movements.length+" yüklenen hareket gösteriliyor"+(movementHasMore?" — daha eski kayıtlar mevcut":"");const total=$("movementTotals");if(total){const incoming=rows.filter(m=>m.type==="IN"),outgoing=rows.filter(m=>m.type==="OUT");total.textContent="Filtrelenen giriş: "+incoming.length+" işlem / "+incoming.reduce((n,m)=>n+num(m.quantity),0)+" birim | Çıkış: "+outgoing.length+" işlem / "+outgoing.reduce((n,m)=>n+num(m.quantity),0)+" birim. Toplamlar yalnızca yüklenen ve filtrelenen kayıtlar içindir."}const more=$("movementLoadMore");if(more){more.hidden=!movementHasMore;more.disabled=movementLoading;more.textContent=movementLoading?"Yükleniyor...":"250 Kayıt Daha Yükle"}
  return rows;
 }
 for(const id of ["movementFilterSearch","movementFilterType","movementFilterFrom","movementFilterTo"]){
  const el=$(id);if(el)el.addEventListener(id==="movementFilterSearch"?"input":"change",()=>render());
 }
 $("movementFilterReset")?.addEventListener("click",()=>{for(const id of ["movementFilterSearch","movementFilterType","movementFilterFrom","movementFilterTo"])$(id).value="";render()});
+async function loadMoreMovements(){
+ if(movementLoading||!movementHasMore||!movementCursor||!user)return;
+ movementLoading=true;render();
+ try{
+  const batch=await getDocs(query(collection(db,"stockMovements"),orderBy("createdAt","desc"),startAfter(movementCursor),limit(250)));
+  if(batch.docs.length)movementCursor=batch.docs[batch.docs.length-1];
+  const seen=new Set(movements.map(m=>m.id));
+  for(const d of batch.docs)if(!seen.has(d.id))movements.push({id:d.id,...d.data()});
+  movementHasMore=batch.docs.length===250;
+ }catch(e){message("Eski stok hareketleri yüklenemedi: "+e.message,true)}
+ finally{movementLoading=false;render()}
+}
+$("movementLoadMore")?.addEventListener("click",loadMoreMovements);
 function csvDownload(filename,rows){const csv="\uFEFF"+rows.map(row=>row.map(v=>'"'+esc(v).replaceAll('"','""')+'"').join(";")).join("\r\n");const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));const a=document.createElement("a");a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 $("openDispatchArchive").onclick=()=>{$("dispatchArchiveDialog").showModal();renderDispatches()};
 $("closeDispatchArchive").onclick=()=>$("dispatchArchiveDialog").close();
