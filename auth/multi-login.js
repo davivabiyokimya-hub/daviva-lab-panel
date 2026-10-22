@@ -1,4 +1,4 @@
-import {GoogleAuthProvider,OAuthProvider,signInWithPopup,signInWithEmailAndPassword,sendPasswordResetEmail,linkWithCredential,EmailAuthProvider} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {GoogleAuthProvider,signInWithPopup,signInWithEmailAndPassword,sendPasswordResetEmail,linkWithCredential,EmailAuthProvider} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 
 /**
  * Opt-in authentication adapter. Does not modify the existing Google login.
@@ -21,11 +21,6 @@ export function createMultiLogin(auth,{resolveUsername}={}){
     return emailLogin(email,password);
   }
   async function googleLogin(){return signInWithPopup(auth,new GoogleAuthProvider());}
-  async function microsoftLogin(){
-    const provider=new OAuthProvider("microsoft.com");
-    provider.setCustomParameters({prompt:"select_account"});
-    return signInWithPopup(auth,provider);
-  }
   async function resetPassword(email){
     if(!normalizeEmail(email))throw new Error("E-posta gerekli.");
     return sendPasswordResetEmail(auth,normalizeEmail(email));
@@ -35,5 +30,5 @@ export function createMultiLogin(auth,{resolveUsername}={}){
     if(!current||!current.email||!current.emailVerified)throw new Error("Doğrulanmış mevcut oturum gerekli.");
     return linkWithCredential(current,EmailAuthProvider.credential(current.email,password));
   }
-  return {emailLogin,usernameLogin,googleLogin,microsoftLogin,resetPassword,linkPasswordToCurrentUser};
+  return {emailLogin,usernameLogin,googleLogin,resetPassword,linkPasswordToCurrentUser};
 }
