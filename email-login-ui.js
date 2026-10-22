@@ -19,11 +19,25 @@ if(googleButton){
   const submit=document.createElement("button");submit.type="submit";submit.className="btn";submit.textContent="Giriş Yap";
   const close=document.createElement("button");close.type="button";close.className="btn alt";close.textContent="Vazgeç";close.style.marginLeft="8px";close.onclick=()=>dialog.close();
   const reset=document.createElement("button");reset.type="button";reset.className="btn alt";reset.textContent="Şifremi Unuttum";reset.style.marginTop="12px";
+  const link=document.createElement("button");link.type="button";link.className="btn alt";link.textContent="Mevcut Google Hesabıma Şifre Ekle";link.style.marginTop="12px";
+  link.onclick=async()=>{
+    const current=auth.currentUser;
+    if(!current||!current.emailVerified){error.textContent="Önce mevcut Google hesabınızla giriş yapmalısınız.";return}
+    if(!password.value||password.value.length<8){error.textContent="En az 8 karakterli bir şifre girin.";return}
+    link.disabled=true;
+    try{await multi.linkPasswordToCurrentUser(password.value);password.value="";error.textContent="Şifre mevcut hesaba bağlandı. UID değişmedi."}
+    catch(e){error.textContent="Hesap bağlanamadı. Bu e-posta başka hesaba bağlı olabilir veya yeniden giriş gerekebilir."}
+    finally{link.disabled=false}
+  };
   const info=document.createElement("p");info.className="hint";info.textContent="Mevcut Google hesabınızla aynı e-posta adresini kullanmak tek başına hesapları birleştirmez. Önce yöneticinizle hesap bağlantısını doğrulayın.";
   form.append(title,email,password,error,submit,close,document.createElement("div"),reset,info);
   dialog.append(form);document.body.append(dialog);
   open.onclick=()=>{error.textContent="";dialog.showModal();email.focus()};
   form.addEventListener("submit",async event=>{event.preventDefault();submit.disabled=true;error.textContent="";try{await multi.emailLogin(email.value,password.value);password.value="";dialog.close()}catch(e){error.textContent="Giriş yapılamadı. Bilgilerinizi ve hesap yetkinizi kontrol edin."}finally{submit.disabled=false}});
   reset.onclick=async()=>{if(!email.validity.valid){error.textContent="Önce geçerli e-posta adresinizi girin.";return}reset.disabled=true;try{await multi.resetPassword(email.value);error.textContent="Hesap uygunsa şifre sıfırlama e-postası gönderilir."}catch(e){error.textContent="İşlem tamamlanamadı. Yöneticiye başvurun."}finally{reset.disabled=false}};
-  onAuthStateChanged(auth,u=>{open.classList.toggle("hidden",!!u);if(u&&dialog.open)dialog.close()});
+  const accountLink=document.createElement("button");accountLink.type="button";accountLink.className="btn alt hidden";accountLink.textContent="Hesabıma Şifre Ekle";document.getElementById("logout")?.before(accountLink);
+  accountLink.onclick=()=>{error.textContent="";email.value=auth.currentUser?.email||"";dialog.showModal();email.disabled=true;submit.classList.add("hidden");reset.classList.add("hidden");link.classList.remove("hidden");password.focus()};
+  open.onclick=()=>{error.textContent="";email.disabled=false;submit.classList.remove("hidden");reset.classList.remove("hidden");link.classList.add("hidden");dialog.showModal();email.focus()};
+  form.append(link);
+  onAuthStateChanged(auth,u=>{open.classList.toggle("hidden",!!u);accountLink.classList.toggle("hidden",!u||!u.emailVerified||u.providerData.some(p=>p.providerId==="password"));if(!u){email.disabled=false}if(dialog.open)dialog.close()});
 }
