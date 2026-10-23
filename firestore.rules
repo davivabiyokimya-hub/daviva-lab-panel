@@ -296,6 +296,22 @@ service cloud.firestore {
         );
       allow update, delete: if false;
     }
+    // QC Excel test-to-product mappings: only administrators may modify.
+    match /qcImportMappings/{mappingId} {
+      allow read: if canAccess('labModules');
+      allow create, update: if admin()
+        && request.resource.data.keys().hasOnly(['excelTest','productId','productName','updatedBy','updatedAt'])
+        && request.resource.data.keys().hasAll(['excelTest','productId','productName','updatedBy','updatedAt'])
+        && request.resource.data.excelTest is string
+        && request.resource.data.excelTest.size() > 0
+        && request.resource.data.excelTest.size() <= 160
+        && request.resource.data.productId is string
+        && exists(productPath(request.resource.data.productId))
+        && request.resource.data.productName == get(productPath(request.resource.data.productId)).data.name
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if admin();
+    }
     match /testLosses/{id} {
       allow read: if canAccess('testLosses');
       allow create: if canAccess('testLosses')
