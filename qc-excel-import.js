@@ -2,6 +2,21 @@ import {getAuth,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/11.
 import {getFirestore,doc,getDoc,collection,getDocs,writeBatch,serverTimestamp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 const $=id=>document.getElementById(id),db=getFirestore(),auth=getAuth();let prepared=[],authorized=false,productMap=new Map(),productsList=[],manualMap=new Map();
 function setup(){const page=$("qcAnalytics");if(!page||$("qcExcelPanel"))return;const panel=document.createElement("div");panel.className="panel";panel.id="qcExcelPanel";panel.innerHTML='<h3>Excel QC Aktarımı ve Test Bazlı Zayiat</h3><p class="muted">Her benzersiz kontrol ölçümü 1 QC testi sayılır. Önizleme ve onay olmadan veri kaydedilmez. Bu işlem fiziksel ürün stok miktarını değiştirmez.</p><div class="actions"><input id="qcExcelFile" type="file" accept=".xlsx,.xls"><button id="qcExcelPreview" class="btn alt" type="button">Excel Önizle</button><button id="qcExcelCommit" class="btn" type="button" disabled>Onayla ve Kaydet</button></div><p id="qcExcelStatus" class="muted"></p><div id="qcExcelMapping" class="panel" hidden><h4>Eşleşmeyen testleri kendiniz eşleştirin</h4><p class="muted">Excel testini stok kartındaki doğru ürünle eşleştirin. Bu işlem yeni stok ürünü oluşturmaz.</p><div id="qcExcelMappingRows"></div><button type="button" class="btn alt" id="qcExcelApplyMapping">Eşleştirmeleri Uygula</button></div><div class="scroll"><table><thead><tr><th>Test</th><th>Kontrol ölçümü / zayiat (test)</th></tr></thead><tbody id="qcExcelRows"></tbody></table></div>';page.prepend(panel);
+// Share the same import controls between QC graphs and Calibration / Control / Waste.
+// Moving one panel (rather than duplicating IDs) keeps the current preview and mappings intact.
+const lossesPage=$("losses");
+if(lossesPage){
+  const relocate=()=>{
+    const qcVisible=!page.classList.contains("hidden");
+    const lossVisible=!lossesPage.classList.contains("hidden");
+    const target=lossVisible?lossesPage:qcVisible?page:null;
+    if(target&&panel.parentElement!==target)target.prepend(panel);
+  };
+  const observer=new MutationObserver(relocate);
+  observer.observe(page,{attributes:true,attributeFilter:["class"]});
+  observer.observe(lossesPage,{attributes:true,attributeFilter:["class"]});
+  relocate();
+}
 const status=t=>$("qcExcelStatus").textContent=t;const hash=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return(h>>>0).toString(36)};const numeric=v=>typeof v==="number"?v:Number(String(v??"").replace(",","."));
 const dateValue=v=>{if(v instanceof Date)return v;if(typeof v==="number"){const d=new Date(Math.round((v-25569)*86400000));return Number.isNaN(+d)?null:d}const d=new Date(v);return Number.isNaN(+d)?null:d};
 async function reader(){if(window.XLSX)return window.XLSX;await new Promise((ok,bad)=>{const s=document.createElement("script");s.src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";s.onload=ok;s.onerror=()=>bad(Error("Excel okuyucu yüklenemedi"));document.head.append(s)});return window.XLSX}
